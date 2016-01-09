@@ -1,0 +1,41 @@
+{
+    'events': {
+        'proxy': {
+            'table': 'scape_proxy',
+            'family': 'raw',
+            'time': 'datetime',
+            'fields': {
+                'datetime': {
+                    'dim': 'datetime',
+                },
+                'src_ip': {
+                    'dim': 'ipv4',
+                    'tags': ['source','internal'],
+                },
+                'user': {
+                    'dim': 'userid',
+                },
+                'srv_ip': {
+                    'dim': 'ipv4',
+                    'tags': ['dest','external','server'],
+                },
+                'req_domain': {
+                    'dim': 'domain',
+                    'tags': ['request',],
+                },
+                'req_fqdn': {
+                    'dim': 'fqdn',
+                    'tags': ['request',],
+                },
+                'bytes_to_client': {
+                    'dim': 'bytes',
+                    'tags': ['dest','external',],
+                },
+                'bytes_from_client': {
+                    'dim': 'bytes',
+                    'tags': ['source','internal'],
+                },
+            },
+        },
+    },
+}

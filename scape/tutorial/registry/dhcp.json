@@ -1,0 +1,25 @@
+{
+    'events': {
+        'dhcp': {
+            'table': 'scape_dhcp',
+            'family': 'raw',
+            'time': 'datetime',
+            'fields': {
+                'src_mac': {
+                    'dim': 'mac',
+                    'tags': ['source'],
+                },
+                'datetime': {
+                    'dim': 'datetime',
+                },
+                'src_ip': {
+                    'dim': 'ipv4',
+                    'tags': ['source','host'],
+                },
+                'dhcp_command': {
+                    'dim': 'command',
+                },
+            },
+        },
+    },
+}

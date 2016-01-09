@@ -1,0 +1,22 @@
+{
+    "name": "vast",
+    "dimensions": {
+        "class": {
+            "ignore": [
+                "-"
+            ]
+        }, 
+        "ipv4": {
+            "ignore": [
+                "0.0.0.0", 
+                "."
+            ]
+        }, 
+        "mac": {
+            "lower": 1
+        }, 
+        "userid": {
+            "lower": 1
+        }
+    }
+}

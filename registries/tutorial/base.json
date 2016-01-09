@@ -1,0 +1,11 @@
+{
+    "name": "tutorial",
+    "dimensions": {
+        "mac": {
+            "lower": true,
+        }, 
+        "userid": {
+            "lower": true,
+        }
+    }
+}
