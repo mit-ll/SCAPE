@@ -29,10 +29,10 @@ _log = scape.utils.new_log('scape.config.data')
 def home_path(user,*parts):
     ''' Path in shared filesystem for a particular user
 
-    E.g. given that the path in the shared fileystem for data is /gridsan
+    E.g. given that the path in the shared fileystem for data is /nfs
 
     >>> scape.config.data.home_path('myuser','splunk','raw','suricata')
-    '/gridsan/myuser/splunk/raw/suricata'
+    '/nfs/myuser/splunk/raw/suricata'
     '''
     return os.path.join(scape.config.config['shared_fs_path'],user,*parts)
     
@@ -40,10 +40,10 @@ def home_path(user,*parts):
 def data_path(*parts):
     ''' Path in shared filesystem for data
 
-    E.g. given that the path in the shared fileystem for data is /gridsan/data
+    E.g. given that the path in the shared fileystem for data is /nfs/data
 
     >>> scape.config.data.data_path('splunk','raw','suricata')
-    '/gridsan/data/splunk/raw/suricata'
+    '/nfs/data/splunk/raw/suricata'
     '''
     return os.path.join(scape.config.config['data_path'],*parts)
 
@@ -51,11 +51,11 @@ def groups_path(group):
     '''Returns path generator for a particular group directory in the
     shared filesystem
 
-    E.g. given that the path in the shared fileystem is /gridsan
+    E.g. given that the path in the shared fileystem is /nfs
 
     >>> scape_group_fn = scape.config.data.groups_path('scape')
     >>> scape_group_fn('stuff')
-    '/gridsan/groups/scape/splunk/raw/suricata'
+    '/nfs/groups/scape/splunk/raw/suricata'
 
     '''
     def group_path(*parts):
@@ -78,9 +78,9 @@ def splunk_raw_data_path(index=None,dt=None):
           the directory you want to find
 
     >>> scape.config.data.splunk_raw_data_path()
-    '/gridsan/data/splunk/raw'
+    '/nfs/data/splunk/raw'
     >>> scape.config.data.splunk_raw_data_path('suricata','2014-02-05')
-    '/gridsan/data/splunk/raw/suricata/2014_02_05'
+    '/nfs/data/splunk/raw/suricata/2014_02_05'
 
     '''
     parts = ['splunk','raw']
