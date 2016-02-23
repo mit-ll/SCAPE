@@ -1,0 +1,6 @@
+# file: roles/kafka/tasks/configure.yml
+
+- name: Kafka | Update the kafka configuration
+  template: src=opt_kafka_latest_config_server.properties.j2 dest={{ kafka_config_server_properties }} owner={{ kafka_user }} group={{ kafka_group }} mode=0644
+  notify:
+    - restart supervisor

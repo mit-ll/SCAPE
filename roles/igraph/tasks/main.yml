@@ -1,0 +1,10 @@
+# file: roles/igraph/tasks/igraph_main_tasks.yml (main.yml)
+
+- name: Check for existence of igraph Python module
+  shell: "{{ pydist_activate }} && python -c 'import igraph'"
+  register: igraph_import
+  ignore_errors: True
+
+- include: igraph_install_tasks.yml
+  when: (igraph_import.rc != 0 ) or dependencies_reinstall
+

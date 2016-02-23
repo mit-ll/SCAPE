@@ -1,0 +1,11 @@
+# file: roles/igraph/defaults/igraph_main_defaults.yml (main.yml)
+
+libiconv_tgz: "libiconv-1.14.tar.gz"
+libiconv_unarc: "{{ dependencies_root }}/libiconv-1.14"
+
+igraph_tgz: "igraph-0.7.1.tar.gz"
+igraph_unarc: "{{ dependencies_root }}/igraph-0.7.1"
+
+python_igraph_tgz: "python-igraph-0.7.1-4.tar.gz"
+python_igraph_unarc: "{{ dependencies_root }}/python-igraph-0.7.1-4"
+

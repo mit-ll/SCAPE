@@ -1,0 +1,16 @@
+# file: roles/kafka/tasks/kafka_user.yml
+
+- name: Kafka | Make sure the kafka group is present
+  action: group name={{ kafka_group }} state=present
+
+- name: Kafka | Make sure the kafka user directory is present
+  action: file path={{ kafka_user_home }} state=directory
+
+- name: Kafka | Make sure the kafka user is present
+  user: name={{ kafka_user }} group={{ kafka_group }} home={{ kafka_user_home }} shell=/bin/bash state=present comment="Kafka user"
+
+- name: Kafka | Set the right kafka user directory permissions
+  action: file path={{ kafka_user_home }} owner={{ kafka_user }} group={{ kafka_group }} mode=0755 state=directory
+
+- name: Kafka | Set the right expiration on the kafka user
+  command: "sudo chage -I -1 -E -1 -m -1 -M -1 -W -1 -E -1 {{ kafka_user }}"

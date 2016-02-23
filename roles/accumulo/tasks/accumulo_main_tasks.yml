@@ -1,0 +1,10 @@
+# file: roles/kafka/tasks/main.yml
+
+- name: ensure kafka is not running under supervisord
+  supervisorctl: name=kafka state=stopped supervisorctl_path={{ supervisorctl_path }}
+
+# - include: kafka_dependencies.yml # don't think this is necessary (BDO)
+- include: kafka_user.yml
+- include: kafka_install.yml
+- include: kafka_configure.yml
+- include: kafka_supervisor_broker.yml

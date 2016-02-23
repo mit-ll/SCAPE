@@ -1,0 +1,30 @@
+# file: roles/pcapy/tasks/libpcap_install.yml
+
+- name: Install libpcap-devel package (yum)
+  yum: name=libpcap-devel
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CentOS'
+  sudo: yes
+  ignore_errors: True
+  register: install_libpcap_via_yum
+
+- name: Install libpcap-dev package (apt-get)
+  apt: name=libpcap-dev
+  when: ansible_os_family == 'Debian' or ansible_os_family == 'Kali'
+  sudo: yes
+  ignore_errors: True
+  register: install_libpcap_via_apt
+
+- name: Install libpcap from source | unarchive
+  unarchive: src={{ libpcap_tgz }} dest={{ dependencies_root }}
+  when: install_libpcap_via_yum|failed or install_libpcap_via_apt|failed
+  
+- name: Install libpcap from source | configure && make install
+  shell: "{{ item }}"
+  args:
+    chdir: "{{ libpcap_unarc }}"
+  with_items:
+    - "./configure --prefix={{ scape_distro_root }}"
+    - make install
+  when: install_libpcap_via_yum|failed
+
+

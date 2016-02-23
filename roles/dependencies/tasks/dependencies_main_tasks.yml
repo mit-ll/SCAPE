@@ -1,0 +1,5 @@
+# file: roles/dependencies/tasks/dependencies_main_tasks.yml (main.yml)
+
+- name: Ensure dependencies directory exists
+  file: dest={{ dependencies_root }} owner={{ scape_user }} state=directory
+

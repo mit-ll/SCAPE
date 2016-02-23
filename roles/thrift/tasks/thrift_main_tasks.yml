@@ -1,0 +1,10 @@
+# file: roles/thrift/tasks/thrift_main_tasks.yml (main.yml)
+
+- name: Check for existence of thrift Python module
+  shell: "{{ pydist_activate }} && python -c 'import thrift'"
+  register: thrift_import
+  ignore_errors: True
+
+- include: thrift_install_tasks.yml
+  when: (thrift_import.rc != 0) or dependencies_reinstall
+

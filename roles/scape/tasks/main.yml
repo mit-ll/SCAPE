@@ -1,0 +1,33 @@
+# file: roles/scape/tasks/scape_main_tasks.yml (main.yml)
+
+- name: check out Scape repo
+  git: repo={{ scape_git_repo }} dest={{ scape_home }} version={{ scape_git_branch }} accept_hostkey=True
+  args:
+    update: yes
+  register: scape_git_checkout
+
+- name: Install Scape
+  shell: "{{ pydist_install_default }}"
+  args:
+    chdir: "{{ scape_home }}"
+  register: scape_import
+
+- name: Install scape.env environment file
+  template: src=scape.env.j2 dest={{ scape_env_path }} owner={{ scape_user }} mode="u=rw,g=rw,o=r"
+    
+- name: Install scape.json configuration file
+  template: src=scape.json.j2 dest={{ scape_config_path }} owner={{ scape_user }} mode="u=rw,g=rw,o=r"
+    
+# Run Scape nosetests
+- name: run Scape nosetests
+  shell: "{{ scape_activate }} && nosetests"
+  args:
+    chdir: "{{ scape_home }}"
+    executable: /bin/bash
+  # when: scape_git_checkout.changed
+  
+    
+
+
+    
+    

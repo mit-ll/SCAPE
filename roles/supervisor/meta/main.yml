@@ -1,0 +1,4 @@
+# file: roles/supervisor/meta/supervisor_main_meta.yml (main.yml)
+
+dependencies:
+  - { role: common_env }

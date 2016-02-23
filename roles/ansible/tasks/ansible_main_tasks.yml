@@ -1,0 +1,9 @@
+# file: roles/ansible/defaults/ansible_main_tasks.yml (main.yml)
+
+- name: Check for existence of ansible Python module
+  shell: "{{ pydist_activate }} && python -c 'import ansible'"
+  register: ansible_import
+  ignore_errors: True
+
+- include: ansible_install_tasks.yml
+  when: (ansible_import.rc != 0) # or dependencies_reinstall

@@ -1,0 +1,7 @@
+# file: roles/GeoIP/meta/GeoIP_main_meta.yml (main.yml)
+
+---
+dependencies:
+  - { role: common }
+  - { role: anaconda }
+  - { role: dependencies }

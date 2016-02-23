@@ -1,0 +1,8 @@
+# file: roles/cleanup/tasks/cleanup_main_tasks.yml (main.yml)
+
+- name: Ensure dependencies directory is removed
+  file: dest={{ dependencies_root }} state=absent
+
+# - name: set permissions for scape distro
+#   file: dest={{ scape_distro_root }} owner={{ scape_user }} state=directory recurse=yes
+

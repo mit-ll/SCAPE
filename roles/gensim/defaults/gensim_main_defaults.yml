@@ -1,0 +1,5 @@
+# file: roles/gensim/defaults/gensim_main_vars.yml (main.yml)
+
+gensim_pyext_tgz: "gensim-0.10.3.tar.gz"
+gensim_pyext_unarc: "{{ dependencies_root }}/gensim-0.10.3"
+

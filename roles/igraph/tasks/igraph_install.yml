@@ -1,0 +1,14 @@
+# file: roles/igraph/tasks/igraph_install.yml
+
+- name: build igraph from source | unarchive
+  unarchive: src={{ igraph_tgz }} dest={{ dependencies_root }}
+  
+- name: build igraph from source | configure and make install
+  shell: "{{ item }}"
+  args:
+    chdir: "{{ igraph_unarc }}"
+  with_items:
+    - "./configure --prefix={{ scape_distro_root }} --libdir={{ scape_lib }}"
+    - make install
+
+

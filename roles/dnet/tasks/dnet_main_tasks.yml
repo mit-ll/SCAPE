@@ -1,0 +1,10 @@
+# file: roles/dnet/tasks/dnet_main_tasks.yml (main.yml)
+
+- name: Check for existence of dnet Python module
+  shell: "{{ pydist_activate }} && python -c 'import dnet'"
+  register: dnet_import
+  ignore_errors: True
+
+- include: dnet_install_tasks.yml
+  when: (dnet_import.rc != 0) or dependencies_reinstall
+

@@ -1,0 +1,17 @@
+# file: roles/scape/meta/scape_main_meta.yml (main.yml)
+
+---
+dependencies:
+  - { role: common_env }
+  - { role: common }
+  - { role: anaconda }
+  - { role: ansible }
+  - { role: geoip2 }
+  - { role: jcc }
+  - { role: thrift }
+  - { role: dnet }
+  - { role: pcapy }
+  - { role: gensim }
+#   - { role: igraph }
+  - { role: python_modules }
+  - { role: acqua }

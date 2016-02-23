@@ -1,0 +1,23 @@
+# file: roles/anaconda/tasks/anaconda_main_tasks.yml (main.yml)
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_os_family }}_anaconda_vars.yml"
+    - "os_default_anaconda_vars.yml"
+
+- name: Check for installation sentinel file
+  stat: path={{ pydist_installation_complete_sentinel }}
+  register: complete_sentinel
+
+# Install Anaconda if it hasn't already been installed
+- include: anaconda_install_tasks.yml
+  when: complete_sentinel.stat.exists == False
+
+# Fix readline on Linux systems
+- name: check for linux readline fix sentinel
+  stat: path={{ anaconda_linux_readline_fix_sentinel }}
+  register: linux_fix_readline_sentinel
+
+# Fix readline on Linux systems
+- include: anaconda_fix_readline_tasks.yml
+  when: (ansible_system == 'Linux') and (not linux_fix_readline_sentinel.stat.exists)

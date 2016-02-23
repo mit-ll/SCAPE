@@ -1,0 +1,17 @@
+# file: roles/supervisor/handlers/main.yml
+
+- name: restart supervisor
+  service: name=supervisor state=restarted
+  sudo: yes
+
+- name: start supervisor
+  service: name=supervisor state=started
+  sudo: yes
+
+- name: stop supervisor
+  service: name=supervisor state=stopped
+  sudo: yes
+
+- name: enable supervisor
+  service: name=supervisor enabled=yes
+  sudo: yes
