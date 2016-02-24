@@ -1,0 +1,5 @@
+# file: roles/anaconda/meta/anaconda_main_meta.yml
+
+---
+dependencies:
+  - { role: common }

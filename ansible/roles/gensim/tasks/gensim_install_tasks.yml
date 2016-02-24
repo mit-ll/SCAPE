@@ -1,0 +1,13 @@
+# file: roles/gensim/tasks/gensim_install_tasks.yml
+
+# ------------------------------------------------------------
+# Build base gensim lib
+
+- name: Copy over gensim and unpack
+  unarchive: src={{ gensim_pyext_tgz }} dest={{ dependencies_root }}
+
+- name: Build gensim extension
+  shell: "{{ pydist_build_ext_default }}"
+  args:
+    chdir: "{{ gensim_pyext_unarc }}"
+

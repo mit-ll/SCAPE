@@ -1,0 +1,12 @@
+[program:kafka-broker]
+command={{kafka_supervisor_command}}
+user={{kafka_user}}
+autostart=true
+autorestart=true
+stopasgroup=true
+startsecs=30
+startretries=999
+stdout_logfile={{kafka_supervisor_log_dir}}/broker.out
+redirect_stderr=true
+stdout_logfile_maxbytes=20MB
+stdout_logfile_backups=10

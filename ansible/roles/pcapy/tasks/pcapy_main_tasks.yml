@@ -1,0 +1,10 @@
+# file: roles/pcapy/tasks/pcapy_main_tasks.yml (main.yml)
+
+- name: Check for existence of pcapy Python module
+  shell: "{{ pydist_activate }} && python -c 'import pcapy'"
+  register: pcapy_import
+  ignore_errors: True
+
+- include: pcapy_install_tasks.yml
+  when: (pcapy_import.rc != 0 ) or dependencies_reinstall
+

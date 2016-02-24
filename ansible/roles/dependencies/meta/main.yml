@@ -1,0 +1,5 @@
+# file: roles/dependencies/meta/dependencies_main_meta.yml (main.yml)
+
+---
+dependencies:
+  - { role: anaconda }

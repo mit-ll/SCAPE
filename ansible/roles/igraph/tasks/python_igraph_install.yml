@@ -1,0 +1,10 @@
+# file: roles/igraph/tasks/python_igraph_install.yml
+
+- name: build python-igraph | copy/unpack tgz
+  unarchive: src={{ python_igraph_tgz }} dest={{ dependencies_root }}
+
+- name: build python-igraph | build & install
+  shell: "{{ pydist_build_ext_default }}"
+  args:
+    chdir: "{{ python_igraph_unarc }}"
+

@@ -1,0 +1,50 @@
+# file: roles/geoip2/tasks/geoip2_install_tasks.yml
+
+# ------------------------------------------------------------
+# Build base libmaxminddb lib
+- name: Copy over libmaxminddb lib and unpack
+  unarchive: src={{ libmaxminddb_lib_tgz }} dest={{ dependencies_root }}
+
+- name: Build libmaxminddb lib
+  shell: "{{ item }}"
+  args:
+    chdir: "{{ libmaxminddb_lib_unarc }}"
+    creates: "{{ libmaxminddb_lib_sentinel }}"
+  with_items:
+    - "./configure --prefix={{ scape_distro_root|quote }}"
+    - make install
+    
+# ------------------------------------------------------------
+# Build base ipaddr lib
+
+- name: Copy over ipaddr and unpack
+  unarchive: src={{ ipaddr_pypure_tgz }} dest={{ dependencies_root }}
+
+- name: Build ipaddr extension
+  shell: "{{ pydist_install_default }}"
+  args:
+    chdir: "{{ ipaddr_pypure_unarc }}"
+
+# ------------------------------------------------------------
+# Build base maxminddb lib
+
+- name: Copy over maxminddb and unpack
+  unarchive: src={{ maxminddb_pyext_tgz }} dest={{ dependencies_root }}
+
+- name: Build maxminddb extension
+  shell: "{{ pydist_build_ext_default }}"
+  args:
+    chdir: "{{ maxminddb_pyext_unarc }}"
+
+# ------------------------------------------------------------
+# Build base geoip2 lib
+
+- name: Copy over geoip2 and unpack
+  unarchive: src={{ geoip2_pypure_tgz }} dest={{ dependencies_root }}
+
+- name: Build geoip2 extension
+  shell: "{{ pydist_install_default }}"
+  args:
+    chdir: "{{ geoip2_pypure_unarc }}"
+
+

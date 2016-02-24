@@ -1,0 +1,3 @@
+# file: roles/anaconda/defaults/RedHat_anaconda_vars.yml
+
+pydist_installer_name: Anaconda-2.1.0-Linux-x86_64.sh

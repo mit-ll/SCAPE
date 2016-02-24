@@ -1,0 +1,10 @@
+# file: roles/kafka/tasks/dependencies.yml
+
+# Don't think this is necessary... (BDO)
+
+- name: Kafka | Make sure the kafka dependencies are installed
+  yum: name={{ item }} state=present
+  with_items:
+    - git
+    - boost-devel
+    - pkgconfig

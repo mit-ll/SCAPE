@@ -1,0 +1,26 @@
+# file: roles/anaconda/tasks/anaconda_run_installer_tasks.yml
+
+- name: ensure anaconda installer destination dir exits
+  file: dest={{ pydist_installer_dest_dir }} owner={{ scape_user }} state=directory
+
+- name: copy over anaconda installer
+  copy: src={{ pydist_installer_name }} dest={{ pydist_installer_dest_dir }} owner={{ scape_user }}
+
+- name: ensure anaconda installer is executable
+  file: dest={{ pydist_installer_dest_dir }}/{{ pydist_installer_name }} mode="a+x"
+
+- debug: var=pydist_installer_dest_dir
+  
+- name: install anaconda
+  shell: "./{{ pydist_installer_name|quote }} -p {{ pydist_home|quote }} -b -f"
+  args:
+    chdir: "{{ pydist_installer_dest_dir }}"
+    executable: /bin/bash
+
+- name: remove anaconda installer 
+  file: dest={{ pydist_installer_dest_dir }} state=absent
+
+- name: touch anaconda installer run sentenel file
+  file: dest={{ pydist_installer_run_sentinel }} state=touch
+
+

@@ -1,0 +1,8 @@
+# file: roles/anaconda/defaults/anaconda_main_vars.yml (main.yml)
+
+# To be included for Anaconda-based Scape distributions
+
+anaconda_readline_tgz: readline-6.2.1.tar.gz
+anaconda_readline_install_path: "{{ pydist_home }}/{{ anaconda_readline_tgz }}"
+anaconda_linux_readline_fix_sentinel: "{{ pydist_root }}/.readline_fixed"
+

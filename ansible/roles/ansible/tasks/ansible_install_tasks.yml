@@ -1,0 +1,12 @@
+# file: roles/ansible/defaults/ansible_install_tasks.yml
+
+- name: Unarchive ansible modules
+  unarchive: src="{{ item.src }}" dest="{{ dependencies_root }}"
+  with_items: ansible_modules
+
+- name: Install ansible modules
+  shell: "{{ pydist_install_default }}"
+  args:
+    chdir: "{{ item.unarc }}"
+  with_items: ansible_modules
+  

@@ -1,0 +1,4 @@
+# file: roles/jcc/meta/jcc_main_meta.yml (main.yml)
+
+dependencies:
+  - { role: dependencies }

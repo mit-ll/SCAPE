@@ -1,0 +1,26 @@
+# file: roles/python_modules/tasks/python_modules_main_tasks.yml (main.yml)
+
+- name: Include distro-specific module lists
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ scape_distro }}_modules.yml"
+    - "development_modules.yml"
+
+- name: Check for existence of Python modules
+  shell: "{{ pydist_activate }} && python -c 'import {{ item.name }}'"
+  register: python_modules_import
+  ignore_errors: True
+  with_items: python_modules
+  
+- name: Unarchive Python modules
+  unarchive: src={{ item.item.src }} dest={{ dependencies_root }}
+  when: (item.rc != 0) or dependencies_reinstall
+  with_items: python_modules_import.results
+
+- name: Install Python modules
+  shell: "{{ pydist_install_default }}"
+  args:
+    chdir: "{{ dependencies_root }}/{{ item.item.unarc }}"
+  when: (item.rc != 0) or dependencies_reinstall
+  with_items: python_modules_import.results
+

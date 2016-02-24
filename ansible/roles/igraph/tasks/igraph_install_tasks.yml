@@ -1,0 +1,10 @@
+# file: roles/igraph/tasks/igraph_install_tasks.yml
+
+- name: ensure libiconv
+  include: libiconv_install.yml
+
+- name: ensure igraph
+  include: igraph_install.yml
+
+- name: ensure python-igraph
+  include: python_igraph_install.yml

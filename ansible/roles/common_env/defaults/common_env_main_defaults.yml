@@ -1,0 +1,149 @@
+# file: roles/common/defaults/common_main_vars.yml (main.yml)
+
+# Used as a dependency for other roles with the "scape_distro"
+# variable set (e.g. development and production roles)
+
+# Scape environment vars
+scape_user: 
+scape_admins:
+scape_group: 
+# ----------------------------------------------------------------
+# Should be overridded in group_vars 
+scape_root: /opt/scape
+scape_root_need_sudo: yes
+scape_data_need_sudo: yes
+
+# ----------------------------------------------------------------
+# Scape distro vars: should be overridden for other distros
+# (e.g. staging, production)
+scape_distro: development
+# ----------------------------------------------------------------
+
+scape_distro_root: "{{ scape_root }}/{{ scape_distro }}"
+scape_lib: "{{ scape_distro_root }}/lib"
+scape_include: "{{ scape_distro_root }}/include"
+scape_bin: "{{ scape_distro_root }}/bin"
+scape_etc: "{{ scape_distro_root }}/etc"
+scape_var: "{{ scape_distro_root }}/var"
+scape_var_log: "{{ scape_var }}/log"
+scape_system_dirs:
+  - "{{ scape_lib }}"
+  - "{{ scape_include }}"
+  - "{{ scape_bin }}"
+  - "{{ scape_etc }}"
+  - "{{ scape_var }}"
+  - "{{ scape_var_log }}"
+scape_share: "{{ scape_distro_root }}/share"
+scape_home: "{{ scape_distro_root }}/scape"
+acqua_home: "{{ scape_distro_root }}/acqua"
+
+
+scape_git_branch: master
+scape_git_repo: 
+
+scape_user_home: "${HOME}/.scape"
+
+# !! Needs to be overridden in group_vars/host_vars
+scape_shared_fs_path: "/tmp/scape" # placeholder
+scape_data_path: "{{ scape_shared_fs_path }}/data/{{ scape_distro }}" # placeholder
+scape_local_data_path: "/tmp/scape/local_data/{{ scape_distro }}" # placeholder
+
+scape_cron_path: "{{ scape_data_path }}/cron"
+scape_log_path: "{{ scape_data_path }}/logs"
+scape_user_log_path: "{{ scape_user_home }}/logs"
+
+scape_log_level: info
+scape_log_format: "%(asctime)s [ %(levelname)s:%(name)s ] (%(filename)s %(lineno)d) : %(message)s"
+
+scape_env_path: "{{ scape_distro_root }}/scape.env"
+scape_config_path: "{{ scape_distro_root }}/scape.json"
+
+scape_registry_paths: "{{ scape_home }}/registries/tutorial/*.json"
+scape_registry_table: scape_registry
+scape_event_collections_table: scape_event_collections
+scape_registry_time_events: 
+
+scape_accumulo_instance: ""
+scape_accumulo_user: ""
+scape_accumulo_password: ""
+scape_accumulo_zookeepers: ""
+scape_accumulo_proxy_host: "localhost"
+scape_accumulo_proxy_port: "42424"
+
+scape_table_shards: 8
+
+scape_foo_interval_minutes: 5
+scape_foo_transport_processors: 32
+scape_foo_mapreduce_path: "{{ scape_cron_path }}/mapreduce"
+scape_foo_inbox_path: "{{ scape_cron_path }}/inbox"
+scape_foo_processing_path: "{{ scape_cron_path }}/processing"
+scape_foo_cron_head: "foo-head"
+
+scape_foo_head: "foo-head"
+scape_foo_user: ""
+scape_foo_time_index: ""
+scape_foo_password: ""
+
+scape_ingest_processors: 64
+scape_ingest_do_aggregate: 1
+
+scape_ipython_setup: ""
+
+java_activate_steps:
+  - "export JAVA_HOME={{ java_home }}"
+  - "export PATH={{ java_home }}/bin:${PATH}"
+
+java_activate: "{{ java_activate_steps|join(' && ') }}"
+
+scape_setup_steps:
+  - "{{ pydist_activate }}"
+  - "{{ java_activate }}"
+  - "export SCAPE_HOME={{ scape_home }}"
+  - "export MANPATH={{ scape_distro_root }}/share/man:${MANPATH}"
+  - "export PKG_CONFIG_PATH={{ scape_lib }}/pkgconfig"
+  - "export PATH={{ scape_bin }}:{{ scape_home }}/bin:${PATH}"
+scape_setup: "{{ scape_setup_steps | join('\n') }}"
+  
+scape_activate: "source {{ scape_env_path }}"
+
+pydist_root: "{{ scape_distro_root }}/anaconda"
+pydist_installer_dest_dir: "{{ pydist_root }}/_installer"
+pydist_home: "{{ pydist_root }}/64bit"
+pydist_lib: "{{ pydist_home }}/lib"
+pydist_include: "{{ pydist_home }}/include"
+pydist_bin: "{{ pydist_home }}/bin"
+
+pydist_activate_steps:
+  - "export PATH={{ pydist_bin }}:$PATH"
+  - "export LD_LIBRARY_PATH={{ scape_lib }}"
+pydist_activate: "{{ pydist_activate_steps | join(' && ') }}"
+
+pydist_build_ext_include_dirs: "--include-dirs={{ pydist_include }}:{{ scape_include }}"
+pydist_build_ext_library_dirs: "--library-dirs={{ pydist_lib }}:{{ scape_lib }}"
+
+# build_ext using setup.py directly. Should only use if absolutely
+# necessary.
+pydist_setup_py_build_ext: "python setup.py build_ext {{ pydist_build_ext_library_dirs }} {{ pydist_build_ext_include_dirs }}"
+pydist_build_ext_setup_py_build_ext: "{{ pydist_activate }} && {{ pydist_setup_py_build_ext }}"
+
+# build_ext using pip install. This is preferred since pip always
+# unpacks ZIP'ed egg packages (avoiding the ~/.python-eggs egg cache
+# directory)
+pydist_pip_install_build_ext: 'pip install --no-deps --force-reinstall --upgrade --global-option="build_ext" --global-option="{{ pydist_build_ext_library_dirs }}" --global-option="{{ pydist_build_ext_include_dirs }}" .'
+pydist_build_ext_pip_install_build_ext: "{{ pydist_activate }} && {{ pydist_pip_install_build_ext }}"
+
+pydist_build_ext_default: "{{ pydist_build_ext_pip_install_build_ext }}"
+
+# Installing with the "easy_install" command and the "-Z" (no ZIP'ed
+# eggs) option. This only works with some modules' setup.py scripts.
+pydist_install_setup_py_no_zip: python setup.py easy_install -Z .
+
+# Installing with pip. This is preferred (see comment above
+# pydist_pip_install_build_ext).
+pydist_pip_install: pip install --no-deps --upgrade --force-reinstall .
+pydist_install_pip_install: "{{ pydist_activate }} && {{ pydist_pip_install }}"
+
+pydist_install_default: "{{ pydist_install_pip_install }}"
+
+pydist_installer_run_sentinel: "{{ pydist_root }}/.anaconda_installed"
+pydist_installation_complete_sentinel: "{{ pydist_root }}/.installation_complete"

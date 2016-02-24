@@ -1,0 +1,23 @@
+# file: roles/supervisor/tasks/supervisor_main_tasks.yml (main.yml)
+
+# - name: Make sure libselinux-python is installed
+#   yum: name=libselinux-python state=present
+
+# - name: Make sure supervisor is installed
+#   # pip: name=supervisor version={{ supervisor_version }}
+#   yum: name=supervisor state=present
+
+- name: Make sure the supervisor conf dir exists
+  file: path={{ supervisor_dir }} state=directory mode=0755 owner=root group=root
+
+- name: Update the global supervisor configuration
+  template: src=etc_supervisord.conf.j2 dest=/etc/supervisord.conf owner=root group=root mode=0644
+
+- name: Make sure the supervisor log dir exists
+  file: path={{ supervisor_log_dir }} state=directory owner=root group=root mode=0755 recurse=yes
+
+- name: Install the supervisor runit script
+  template: src=etc_init.d_supervisor.j2 dest=/etc/init.d/supervisor owner=root group=root mode=0755
+  notify:
+    - enable supervisor
+    - restart supervisor
