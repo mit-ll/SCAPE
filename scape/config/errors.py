@@ -14,26 +14,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''Utility and helper functions for SCAPE environment.
 
+''' Scape configuration errors
 '''
-import logging
 
-__all__ = ['sge','args','maxmind','userip','services',]
+class ScapeConfigError(Exception):
+    pass
 
-from scape.utils.log import *
+class ScapeConfigLoggingError(Exception):
+    pass
 
-_log = new_log('scape.utils')
-
-from scape.utils.ip import *
-from scape.utils.entropy import *
-from scape.utils.builtins import *
-from scape.utils.json import *
-from scape.utils.file import *
-from scape.utils.data import *
-from scape.utils.csv import *
-from scape.utils.shell import *
-from scape.utils.decorators import *
-from scape.utils.time import *
-from scape.utils.errors import *
+class ScapeConfigDataError(Exception):
+    pass
 

@@ -24,68 +24,16 @@ except ImportError:
     import json as _json
 import ast
 import collections
+from copy import deepcopy
 from datetime import datetime
 
 from scape.utils.log import new_log
 from scape.utils.file import zip_open
 
-__all__ = ['merge_dicts', 'json_dict', 'ScapeJsonReadError',
+__all__ = ['json_dict', 'ScapeJsonReadError',
            'read_json_data', 'read_json', 'read_ndjson']
 
 _log = new_log('scape.utils.json')
-
-def merge_dicts(dest,source):
-    '''Merge source dictionary with dest dictionary **in place**
-
-    dest and source can be arbitrarily nested dictionaries, but the
-    only value data types handled are list, tuple and set. Also
-    assumed is that the values correspding to the same key in dest and
-    source (at the same depth) are the same type.
-
-    If desk[k] and source[k] are not sets, lists, tuples or dicts,
-    then dest[k] is overwritten by source[k].
-
-    If dest[k] and source[k] are lists or tuples, then the values in
-    source[k] are added to the end of dest[k].
-
-    If dest[k] and source[k] are sets, then they are unioned together
-
-    Otherwise (i.e. dest[k] and source[k] are dicts), the process
-    traverses down the nested hierarchy
-
-    >>> merge_dicts({'a':[1]},{'a':[1,2]})
-    {'a': [1, 1, 2]}
-    >>> merge_dicts({'a':(1,)},{'a':(1,2)})
-    {'a': (1, 1, 2)}
-    >>> merge_dicts({'a':{1}},{'a':{1,2}})
-    {'a': {1, 2}}
-    >>> merge_dicts({'a':{'b':4}},{'a':{'b':8}})
-    {'a': {'b': 8}}
-
-    '''
-    stack = [(dest,source)]
-    while stack:
-        dst,src = stack.pop()
-        try:
-            for k in src:
-                if k not in dst:
-                    dst[k] = src[k]
-                elif not isinstance(src[k],(list,tuple,set,dict)):
-                    dst[k] = src[k]
-                elif isinstance(src[k], list):
-                    dst[k].extend(src[k])
-                elif isinstance(src[k], tuple):
-                    dst[k] += src[k]
-                elif isinstance(src[k], set):
-                    dst[k] |= src[k]
-                else:
-                    #_log.debug('key:%s src[k]:%s',k,src[k])
-                    stack.append((dst[k],src[k]))
-        except:
-            _log.error(dst)
-            _log.error(source)
-            raise
-    return dest
 
 def json_dict(D,ts_format='%Y-%m-%d %H:%M:%S'):
     '''Given a dictionary D, return a "JSON-friendly" version of this
@@ -103,8 +51,7 @@ def json_dict(D,ts_format='%Y-%m-%d %H:%M:%S'):
     {'a': [[1,2,3], 'b', [1,2]]}
 
     '''
-    new = {}
-    merge_dicts(new,D)
+    new = deepcopy(D)
 
     stack = [new]
 

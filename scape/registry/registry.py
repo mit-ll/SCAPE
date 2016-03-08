@@ -60,18 +60,17 @@ class Registry(object):
     def __init__(self, paths=None, dicts=None, registry_dict=None,
                  connection=None):
         paths = paths if paths else []
+
+        # First load dictionaries from paths
         paths_dicts = [scape.utils.read_json(p) for p in paths]
 
+        # Then add individual dictionaries
         dicts = paths_dicts + dicts if dicts else paths_dicts
 
-        merged_dict = reduce(scape.utils.merge_dicts,dicts,{})
+        # Last, add the gestalt registry_dict
+        all_dicts = dicts + [registry_dict] if registry_dict else dicts
 
-        registry_dict = reduce(
-            scape.utils.merge_dicts,
-            [merged_dict,registry_dict], {}
-        ) if registry_dict else merged_dict
-
-        self.registry_dict = registry_dict
+        self.registry_dict = scape.utils.merge_dicts(*all_dicts)
         
         self.graph = self.graph_from_dict(registry_dict)
 

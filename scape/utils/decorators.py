@@ -55,6 +55,25 @@ def remove_nulls(*null_values):
         return null
     return null_remover
 
+def memoized(func):
+    '''Decorator for functions that memoizes the returned value
+
+    >>> @memoized
+    ... def expensive_calculation(line):
+    ...     return int(line.strip())
+    >>>
+
+    '''
+    attr_name = '_{0}_value'.format(func.__name__)
+
+    @functools.wraps(func)
+    def func_memoized(*a, **kw):
+        if not hasattr(func, attr_name):
+            setattr(func, attr_name, func(*a, **kw))
+        return getattr(func, attr_name)
+
+    return func_memoized
+    
 
 def memoized_property(fget):
     '''Decorator for instance properties that memoizes the returned value
