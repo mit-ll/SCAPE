@@ -55,6 +55,8 @@ class Connection(object):
         )
 
     def pickle(self):
+        ''' Pickle a connection 
+        '''
         return (self.__class__.__module__, self.__class__.__name__,
                 self.paths, self.dicts,
                 self.registry_dict, self._db_connection_kw,)
