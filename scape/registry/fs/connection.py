@@ -35,10 +35,13 @@ from scape.registry.exceptions import (
 from scape.registry.event import (
     Event,
 )
+from scape.registry.connection import (
+    Connection
+)
 
 import scape.config
 
-class FileConnection(scape.registry.connection.Connection):
+class FileConnection(Connection):
 
     def _table_file_name(self,T):
         return T['table'][0]+'.csv'

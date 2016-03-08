@@ -22,16 +22,13 @@ import glob
 import datetime
 
 from acqua.connection import Connection
-from acqua.operators import (
-    DummySource,
-)
 
 from scape.utils.decorators import (
     memoized_property
 )
 from scape.registry.registry import Registry
 
-import scape.tutorial.data as data
+from scape.tutorial import data
 
 __dir__ = os.path.abspath(os.path.dirname(__file__))
 
