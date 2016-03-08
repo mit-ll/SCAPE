@@ -1,0 +1,14 @@
+---
+#
+# Build Scape environment 
+- name: Scape build
+  hosts: foo_ws
+  vars:
+    scape_distro: development
+    scape_git_branch: master
+    acqua_git_branch: master
+    scape_root_need_sudo: yes
+  roles:
+    - role: scape
+    - role: cleanup
+      
