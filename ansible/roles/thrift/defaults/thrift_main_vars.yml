@@ -1,5 +1,0 @@
-# file: roles/thrift/defaults/thrift_main_vars.yml (main.yml)
-
-thrift_pyext_tgz: "thrift-0.9.1.tar.gz"
-thrift_pyext_unarc: "{{ dependencies_root }}/thrift-0.9.1"
-

@@ -1,9 +1,0 @@
-# file: roles/GeoIP/tasks/GeoIP_main_tasks.yml (main.yml)
-
-- name: Check for existence of GeoIP Python module
-  shell: "{{ pydist_activate }} && python -c 'import GeoIP'"
-  register: GeoIP_import
-  ignore_errors: True
-
-- include: GeoIP_install_tasks.yml
-  when: (GeoIP_import.rc != 0) or (dependencies_reinstall)

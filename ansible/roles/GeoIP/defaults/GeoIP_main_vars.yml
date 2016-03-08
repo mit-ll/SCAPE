@@ -1,9 +1,0 @@
-# file: roles/GeoIP/defaults/GeoIP_main_vars.yml (main.yml)
-
-GeoIP_lib_tgz: "GeoIP-1.4.8.tar.gz"
-GeoIP_lib_unarc_name: "GeoIP-1.4.8"
-GeoIP_lib_unarc: "{{ dependencies_root }}/{{ GeoIP_lib_unarc_name }}"
-GeoIP_lib_sentinel: "{{ scape_lib }}/libGeoIP.a"
-
-GeoIP_pyext_tgz: "GeoIP-Python-1.2.7.tar.gz"
-GeoIP_pyext_unarc: "{{ dependencies_root }}/GeoIP-Python-1.2.7"

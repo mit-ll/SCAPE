@@ -1,8 +1,0 @@
-# file: roles/dnet/defaults/dnet_main_vars.yml (main.yml)
-
-dnet_lib_tgz: "libdnet-1.12.tgz"
-dnet_lib_unarc_name: "libdnet-1.12"
-dnet_lib_unarc: "{{ dependencies_root }}/{{ dnet_lib_unarc_name }}"
-dnet_lib_sentinel: "{{ scape_lib }}/libdnet.a"
-
-dnet_pyext_path: "{{ dnet_lib_unarc }}/python"

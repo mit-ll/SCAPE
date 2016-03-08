@@ -1,6 +1,0 @@
-# file: roles/ansible/defaults/ansible_main_vars.yml (main.yml)
-
-ansible_modules:
-  - { name: ecdsa, src: "ecdsa-0.11.tar.gz", unarc: "{{ dependencies_root }}/ecdsa-0.11" }
-  - { name: paramiko, src: "paramiko-1.15.2.tar.gz", unarc: "{{ dependencies_root }}/paramiko-1.15.2" }
-  - { name: ansible, src: "ansible-1.8.4.tar.gz", unarc: "{{ dependencies_root }}/ansible-1.8.4" }
