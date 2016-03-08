@@ -19,6 +19,7 @@ limitations under the License.
 """
 import abc
 import collections
+from six import with_metaclass
 
 from scape.utils.log import new_log
 from scape.utils.decorators import (
@@ -87,13 +88,12 @@ class RegistryOperatorMeta(abc.ABCMeta):
 
         return super(RegistryOperatorMeta,cls).__new__(cls, name, parents, dct)
 
-class RegistryOperator(collections.Iterator):
+class RegistryOperator(with_metaclass(RegistryOperatorMeta,
+                                      collections.Iterator)):
     '''Handles operator functions for tagged dimensions over some Registry
     Selection
 
     '''
-    __metaclass__ = RegistryOperatorMeta
-
     # args is defined in subclasses as tuple (to specify ordering)
     # e.g.
     # args = (
