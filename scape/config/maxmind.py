@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-''' Data access utilities for Scape based on configuration
+''' MaxMind GeoLite configuration mixin
 '''
 
 import os
@@ -28,31 +28,18 @@ from scape.config.error import (
     ScapeConfigError, ScapeConfigDataError, 
 )
 
-_log = scape.utils.new_log('scape.config.data')
+_log = scape.utils.new_log('scape.config.maxmind')
 
-class ConfigData(dict):
-    '''Scape configuration data/filesystem helper mixin.
-
-    The assumption of this mixin class is that there exists:
-
-    1) A directory in a shared file system (e.g. NFS or Lustre FS)
-       where data is available for common use and
-
-    2) A local data directory for operations that require local
-       storage (e.g. sqlite3 dbs that require file locking, something
-       the Lustre file systems can't provide).
-
-    This class then provides helper methods that provide information
-    about the relevant path structure of these file systems.
+class ConfigMaxmind(dict):
+    '''Scape configuration for MaxMind GeoLite database
 
     '''
 
     config = {
-        "data": {
-            "shared_fs_path": "{{ scape_shared_fs_path }}", 
-            "shared_data_path": "{{ scape_data_path }}", 
-            "local_data_path": "{{ scape_local_data_path }}",
+        "maxmind": {
+            "db_path": "${HOME}/scape/share",
         },
+
     }
     
     def home_path(self, user, *parts):
