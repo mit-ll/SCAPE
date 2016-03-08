@@ -29,7 +29,7 @@ import __main__
 
 import scape.config
 
-from scape.config.error import (
+from scape.config.errors import (
     ScapeConfigError, ScapeConfigLoggingError, 
 )
 

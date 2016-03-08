@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 
 import scape.utils
 
-from scape.config.error import (
+from scape.config.errors import (
     ScapeConfigError, ScapeConfigDataError, 
 )
 

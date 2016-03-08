@@ -30,20 +30,24 @@ is configured.
 
 from __future__ import absolute_import
 import ast
+import abc
 import json
 import os
 import sys
 import glob
 import logging as _logging
 import traceback
+from collections import OrderedDict
 from datetime import datetime
+
+from six import with_metaclass
 
 import scape.utils
 from scape.utils import (
     memoized, memoized_property,
 )
 
-from scape.config.error import (
+from scape.config.errors import (
     ScapeConfigError, 
 )
 
@@ -187,6 +191,32 @@ def expand_registry(config):
             time_events = config['registry']['time_events'].split(os.pathsep)
             config['registry']['time_events'] = time_events
 
+class ConfigVars:
+    root = "${HOME}/scape"
+    home = os.path.join(root, "scape")
+    user_home = "${HOME}/.scape"
+    classes = [
+        'scape.config.Config',
+        'scape.config.data.ConfigData',
+        "scape.config.logging.ConfigLogging",
+    ]
+
+class ConfigMeta(abc.ABCMeta):
+    def __new__(cls, name, parents, dct):
+        config = dct.setdefault('config',())
+        cdict = OrderedDict()
+        stack = [(config,cdict)]
+        while stack:
+            items = stack.pop()
+            for name, value in items:
+                
+        return super(ConfigMeta,cls).__new__(cls,name,parents,dct)
+
+class ConfigBase(with_metaclass(ConfigMeta,dict)):
+    def __init__(self):
+        
+
+
 class Config(dict):
     '''Base class for Scape configuration dictionary
 
@@ -208,27 +238,12 @@ class Config(dict):
 
     '''
 
-    root = "${HOME}/scape"
-    home = None
-    bin = os.path.join(home, "bin")
-    user_home = "${HOME}/scape"
-    classes = [
-        'scape.config.Config',
-        'scape.config.data.ConfigData',
-        "scape.config.logging.ConfigLogging",
-    ]
-
-    config = {
-        "home": home,
-        "bin": bindir
-        "user_home": "${HOME}/.scape",
-
-        "classes": [
-            "scape.config.Config",
-            "scape.config.data.ConfigData",
-        ],
-
-    }
+    config = (
+        ("root", root),
+        ("home", home),
+        ("user_home", user_home),
+        ("classes", classes),
+    )
     
     def __init__(self, paths=None, dicts=None):
         '''Constructor for Config dictionary

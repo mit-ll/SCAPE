@@ -14,7 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 '''Configuration management for Scape
 
 The Scape environment is configured through a combination of
@@ -27,8 +26,8 @@ should be a path pointing to the JSON file from which the environment
 is configured.
 
 '''
-
 from __future__ import absolute_import
+
 import ast
 import json
 import os
@@ -38,6 +37,7 @@ import logging as _logging
 import traceback
 from datetime import datetime
 
+import scape.utils
 
 __all__ = ['logging', 'data']
 
