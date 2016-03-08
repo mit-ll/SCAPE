@@ -42,6 +42,8 @@ from datetime import datetime
 
 from six import with_metaclass
 
+from datetime import datetime
+
 import scape.utils
 from scape.utils import (
     memoized, memoized_property,
@@ -214,7 +216,7 @@ class ConfigMeta(abc.ABCMeta):
 
 class ConfigBase(with_metaclass(ConfigMeta,dict)):
     def __init__(self):
-        
+        pass
 
 
 class Config(dict):

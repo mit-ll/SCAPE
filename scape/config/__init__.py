@@ -37,7 +37,6 @@ import logging as _logging
 import traceback
 from datetime import datetime
 
-import scape.utils
 
 __all__ = ['logging', 'data']
 
