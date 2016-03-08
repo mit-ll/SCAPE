@@ -1,5 +1,0 @@
-# file: roles/ansible/defaults/ansible_main_meta.yml (main.yml)
-
----
-dependencies:
-  - { role: dependencies }
