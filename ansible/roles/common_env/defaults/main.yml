@@ -39,7 +39,7 @@ acqua_home: "{{ scape_distro_root }}/acqua"
 
 
 scape_git_branch: master
-scape_git_repo: 
+scape_git_repo: "git@github.com:mit-ll/SCAPE.git"
 
 scape_user_home: "${HOME}/.scape"
 
