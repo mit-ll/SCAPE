@@ -118,7 +118,7 @@ def literal_eval(node_or_string):
     if isinstance(node_or_string, basestring):
         try:
             node_or_string = ast.parse(node_or_string, mode='eval')
-        except Exception, e:
+        except Exception as e:
             raise ScapeJsonReadError(e)
 
     if isinstance(node_or_string, ast.Expression):
@@ -177,7 +177,7 @@ def read_json_data(data):
     except ScapeJsonReadError:
         try:
             obj = _json.loads(data)
-        except Exception,e:
+        except Exception as e:
             _log.error('Cannot parse JSON data.')
             raise ScapeJsonReadError(e)
     return obj
