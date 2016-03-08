@@ -23,7 +23,7 @@ from datetime import datetime
 import acqua
 import acqua.build
 
-import scape.registry.connection
+from scape.registry.connection import Connection
 import scape.utils
 from scape.utils import (
     memoized_property,
@@ -332,7 +332,7 @@ class ScapeAcquaDB(AcquaDB):
         
     }
 
-class AcquaConnection(scape.registry.connection.Connection):
+class AcquaConnection(Connection):
     @memoized_property
     def acqua(self):
         raise NotImplementedError('Must subclass AcquaConnection')
