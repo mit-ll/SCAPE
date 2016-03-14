@@ -1,0 +1,47 @@
+events:
+  bigbrother:
+    time: parsedDate
+    family: raw
+    table: vast_2013_bigbrother
+    fields:
+      parsedDate:
+        dim: datetime
+      id:
+        dim: id
+      hostname:
+        dim: hostname
+      servicename:
+        dim: service
+      statusVal:
+        dim: status
+      bbcontent: {}
+      receivedfrom:
+        dim: ipv4
+        tags:
+        - source
+      diskUsagePercent:
+        dim: percent
+        tags:
+        - disk
+        - usage
+      pageFileUsagePercent:
+        dim: percent
+        tags:
+        - page_file
+        - usage
+      numProcs:
+        dim: count
+        tags:
+        - processor
+      loadAveragePercent:
+        dim: percent
+        tags:
+        - load
+        - average
+      physicalMemoryUsagePercent:
+        dim: percent
+        tags:
+        - memory
+        - usage
+      connMade:
+        dim: connection

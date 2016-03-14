@@ -29,6 +29,7 @@ from scape.utils.ip import *
 from scape.utils.entropy import *
 from scape.utils.builtins import *
 from scape.utils.json import *
+from scape.utils.yaml import *
 from scape.utils.file import *
 from scape.utils.data import *
 from scape.utils.csv import *
@@ -36,4 +37,5 @@ from scape.utils.shell import *
 from scape.utils.decorators import *
 from scape.utils.time import *
 from scape.utils.errors import *
+from scape.utils.builtins import *
 

@@ -24,13 +24,16 @@ from datetime import datetime, timedelta
 
 import scape.utils
 
-from scape.config.errors import (
+from .errors import (
     ScapeConfigError, ScapeConfigDataError, 
+)
+from .config import (
+    ConfigBase
 )
 
 _log = scape.utils.new_log('scape.config.data')
 
-class ConfigData(dict):
+class ConfigData(ConfigBase):
     '''Scape configuration data/filesystem helper mixin.
 
     The assumption of this mixin class is that there exists:
@@ -47,14 +50,6 @@ class ConfigData(dict):
 
     '''
 
-    config = {
-        "data": {
-            "shared_fs_path": "{{ scape_shared_fs_path }}", 
-            "shared_data_path": "{{ scape_data_path }}", 
-            "local_data_path": "{{ scape_local_data_path }}",
-        },
-    }
-    
     def home_path(self, user, *parts):
         '''Path in shared filesystem for a particular user
 

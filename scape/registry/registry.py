@@ -1,24 +1,24 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
+import glob
 from copy import deepcopy
 from datetime import datetime
+from typing import *
 
 import networkx as nx
 
@@ -40,8 +40,85 @@ from scape.registry.exceptions import (
 from scape.registry.question import (
     Question,
 )
+from functools import reduce
 
 _log = new_log('scape.registry.registry')
+
+def read_registry_path(path: str) -> Any:
+    reader = scape.utils.read_json
+    if path.endswith('.yml'):
+        reader = scape.utils.read_yaml
+    return reader(path)
+
+import ipaddress
+class PandasWrapper(object):
+    def __init__(self, registry, df, selection=None):
+        self.df = df
+        self.registry = registry
+        columns = df.columns
+        if not selection:
+            _log.info('No selection provided. Guessing event'
+                      ' associated with this pandas DataFrame')
+            best_candidate = None
+            best_overlap = 0
+            for E in self.registry.events:
+                overlap = len(E.fields(*columns))
+                if overlap > best_overlap:
+                    best_candidate = E
+                    best_overlap = overlap
+            if not best_candidate:
+                raise ScapeRegistryError(
+                    'No event found in this registry that has'
+                    ' columns associated with this pandas DataFrame'
+                )
+            selection = best_candidate
+        self.selection = selection
+
+    def _get_fields(self, *tdims):
+        fields = set(self.selection.fields.have_any(*tdims)['name'])
+        return sorted(fields & set(self.df.columns))
+
+    fields = None
+    def __call__(self, *tdims):
+        self.fields = self._get_fields(*tdims)
+        return self
+
+    def __eq__(self, other):
+        if self.fields:
+            if isinstance(other, ipaddress._BaseAddress):
+                errors = (TypeError, ValueError)
+                def crit(v):
+                    return ipaddress.ip_address(v)==other
+                try:
+                    series = self.df[self.fields[0]].map(crit)
+                except errors:
+                    pass
+                for f in self.fields[1:]:
+                    try:
+                        series |= self.df[f].map(crit)
+                    except errors:
+                        pass
+            else:
+                try:
+                    series = self.df[self.fields[0]] == other
+                except TypeError:
+                    pass
+                for f in self.fields[1:]:
+                    try:
+                        series |= self.df[f] == other
+                    except TypeError:
+                        pass
+            return series
+
+    def __getitem__(self, index):
+        tdims = index
+        if type(index) is str:
+            tdims = [index]
+        fields = set(self.selection.fields.have_any(*tdims)['name'])
+        fields = sorted(fields & set(self.df.columns))
+        # return self.df[fields]
+        return fields
+            
 
 class Registry(object):
     '''Knowledge Registry configuration, access and query
@@ -62,7 +139,7 @@ class Registry(object):
         paths = paths if paths else []
 
         # First load dictionaries from paths
-        paths_dicts = [scape.utils.read_json(p) for p in paths]
+        paths_dicts = [read_registry_path(p) for p in paths]
 
         # Then add individual dictionaries
         dicts = paths_dicts + dicts if dicts else paths_dicts
@@ -72,7 +149,7 @@ class Registry(object):
 
         self.registry_dict = scape.utils.merge_dicts(*all_dicts)
         
-        self.graph = self.graph_from_dict(registry_dict)
+        self.graph = self.graph_from_dict(self.registry_dict)
 
         root_name = self.graph.node[self.graph.root_node]['name']
         self.root_name = root_name
@@ -89,6 +166,33 @@ class Registry(object):
         )
 
         self.connection = connection
+
+    def pickle(self):
+        pass
+
+    def __call__(self, *tdims):
+        class SelectionPipe(object):
+            registry = self
+            def __init__(self, tdims, opstack=None):
+                self.tdims = tdims
+                self.opstack = opstack or []
+            def __eq__(self, other):
+                return SelectionPipe(self.tdims, self.opstack + [('eq',(self, other))])
+            def __leq__(self, other):
+                pass
+            def __neq__(self, other):
+                pass
+            def __call__(self, df):
+                if self.opstack:
+                    print(self.opstack)
+                F = self.registry.fields(*df.columns)
+                fields = sorted(F.have_any(*self.tdims)['name'])
+                return df[fields]
+        # def df_pipe(df):
+        #     F = self.fields(*df.columns)
+        #     fields = sorted(F.have_any(*tdims)['name'])
+        #     return df[fields]
+        return SelectionPipe(tdims)
 
     _connection = None
     @property
@@ -107,6 +211,22 @@ class Registry(object):
     @property
     def question(self):
         return self.selection.question
+    
+    @property
+    def fields(self):
+        return self.selection.fields
+    @property
+    def events(self):
+        return self.selection.events
+    @property
+    def states(self):
+        return self.selection.states
+    @property
+    def dims(self):
+        return self.selection.dims
+    @property
+    def tags(self):
+        return self.selection.tags
 
     @classmethod
     def graph_from_dict(cls, registry):
@@ -128,9 +248,9 @@ class Registry(object):
         dimension_metadata = registry.pop('dimensions',{})
         tag_metadata = registry.pop('tags',{})
         em_items = [('event',(n,pdict))
-                    for n,pdict in registry.pop('events',{}).items()]
+                    for n,pdict in list(registry.pop('events',{}).items())]
         sm_items = [('state',(n,pdict))
-                    for n,pdict in registry.pop('states',{}).items()]
+                    for n,pdict in list(registry.pop('states',{}).items())]
         ntype_map = {'event': E, 'state': S}
 
         for ntype,(pname,pdict) in em_items+sm_items:
@@ -174,14 +294,14 @@ class Registry(object):
                     #G.add_node(tnode,name=t,type='tag')
                 G.add_edge(tnode,pnode)
 
-            for fname,fdict in fields.items():    
+            for fname,fdict in list(fields.items()):    
                 tags = fdict.pop('tags',[])
                 dname = fdict.pop('dim',None)
                 multiple = fdict.pop('multiple',False)
                 family = fdict.pop('family',event_family)
                 fvstack = pvstack + [fdict.pop('vis','')]
                 fviz = '&'.join(['({})'.format(v)
-                                 for v in filter(None,fvstack)])
+                                 for v in [_f for _f in fvstack if _f]])
                 fnode = F(pnode,fname)
                 G.add_node(
                     fnode,name=fname,multiple=multiple,type='field',
@@ -205,7 +325,7 @@ class Registry(object):
                     #G.add_node(tnode,name=t,type='tag')
                     G.add_edge(fnode,tnode)
 
-        for key, value in registry.items():
+        for key, value in list(registry.items()):
             G.node[root_node][key] = value
 
         G = nx.freeze(G)
@@ -293,6 +413,12 @@ class Selection(object):
     def question(self):
         return self.question_class(selection=self) #pylint: disable=not-callable
 
+    def pdf(self, *tdims):
+        def df_pipe(df):
+            F = sorted(self.fields.have(*tdims)['name'])
+            return df[F]
+        return df_pipe
+
     def __hash__(self):
         return hash(self.node_set)
 
@@ -319,7 +445,8 @@ class Selection(object):
         if show_fields:
             nodes = (self.node_set |
                      set(reduce(lambda a,b:set(a)|set(b),
-                                [self.graph.neighbors(n) for n in self.node_set],
+                                [self.graph.neighbors(n)
+                                 for n in self.node_set],
                                 set())))
             nodes = {n for n in nodes if not n.startswith('registry:')}
             G = self.graph.subgraph(nodes)
@@ -444,27 +571,9 @@ class Selection(object):
         '''
         return self._tabular()
 
-    def create_tables(self):
-        self.connection.create_tables(self.tabular)
-
-    def destroy_tables(self):
-        return self.connection.destroy_tables(self.tabular)
-
-    def ingest_csv(self, *paths):
-        self.connection.ingest_csv(self.tabular, *paths)
-
-    def ingest_json(self, *paths):
-        self.connection.ingest_json(self.tabular, *paths)
-
-    def ingest_xml(self, *paths):
-        self.connection.ingest_xml(self.tabular, *paths)
-
-    def ingest_rows(self,row_iterator_or_sequence):
-        self.connection.ingest_rows(self.tabular, row_iterator_or_sequence)
-
     @property
     def last_time(self):
-        times = filter(None, self.connection.last_times(self.tabular))
+        times = [_f for _f in self.connection.last_times(self.tabular) if _f]
         if times:
             return max(times)
         else:
@@ -524,7 +633,7 @@ class Selection(object):
                         (
                             # all tags (field's and field's event's tags)
                             (all((not (f.tags|f.events.tags).names.isdisjoint(tset))
-                                 for tset in td['tags'].values()))
+                                 for tset in list(td['tags'].values())))
 
                             and
 
@@ -624,18 +733,18 @@ class Selection(object):
         else:
             node_set = set(self.node_set)
 
-        for attr, values in attr_constraints.items():
-            if isinstance(values, basestring):
+        for attr, values in list(attr_constraints.items()):
+            if isinstance(values, str):
                 attr_constraints[attr] = [values]
 
         node_set = [v for v in node_set
                     if all(any(self.graph.node[v].get(attr)==value
                                for value in values)
-                           for attr,values in attr_constraints.items())]
+                           for attr,values in list(attr_constraints.items()))]
 
         return self.from_node_set(node_set)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.node_set)
 
     def __len__(self):
@@ -644,7 +753,7 @@ class Selection(object):
     def __getitem__(self, index):
         if isinstance(index, int):
             return self.from_node_set([self.node_list[index]])
-        elif isinstance(index, basestring):
+        elif isinstance(index, str):
             return [self.graph.node[v][index] for v in self.node_list]
 
     def get(self, key, default=None):

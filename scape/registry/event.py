@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 ''' Individual event abstraction object classes
 '''
 import itertools
@@ -34,6 +32,7 @@ from scape.utils.decorators import (
 from scape.registry.utils import (
     TaggedDimension, HashableDict,
 )
+from functools import reduce
 
 class _EventView(object):
     def __init__(self,question):
@@ -55,7 +54,7 @@ class EventFlatSet(_EventView):
 
 def nested_dict(D):
     tstr = '<table class="tool">'
-    for k,v in sorted(D.items(),key=lambda e:e[0] if not e[0].isdigit() else int(e[0])):
+    for k,v in sorted(list(D.items()),key=lambda e:e[0] if not e[0].isdigit() else int(e[0])):
         rstr = '<tr class="tool"><td class="tool">{}</td>'.format(k)
         if isinstance(v,dict):
             v = nested_dict(v)
@@ -127,7 +126,7 @@ class EventGraph(_EventView):
             
 class EventDiGraph(_EventView):
     def __call__(self,*key_pairs):
-        key_pairs,edge_keys = zip(*[(p[:2],p[-1]) if len(p)>2 else (p,[]) for p in key_pairs])
+        key_pairs,edge_keys = list(zip(*[(p[:2],p[-1]) if len(p)>2 else (p,[]) for p in key_pairs]))
         keys = ( reduce(lambda a,b:set(a)|set(b),key_pairs,set()) |
                  reduce(lambda a,b:set(a)|set(b),edge_keys,set()) )
         #G = networkx.DiGraph()
@@ -205,7 +204,7 @@ class EventList(object):
         vitems = self[keys]
         values = set()
         for vtuple in vitems:
-            if isinstance(vtuple[0],basestring):
+            if isinstance(vtuple[0],str):
                 value.update(vtuple)
             else:
                 for vt in vtuple:
@@ -246,7 +245,7 @@ class Event(object):
     def _repr_html_(self):
         row = self.td_row()
         rows = []
-        items = row.items()
+        items = list(row.items())
         items.sort(key=lambda e:(e[0][1],e[0][2]))
         for (tags,dim,field),value in items:
             tstr = ' : '.join([
@@ -265,7 +264,7 @@ class Event(object):
         return table
 
     def td_row(self):
-        fields = self.selection.fields(*self.row.keys())
+        fields = self.selection.fields(*list(self.row.keys()))
         row = OrderedDict()
         found_fields = set()
         for F in fields:
@@ -288,7 +287,7 @@ class Event(object):
                    field_colorer=lambda s:s):
         td_row = self.td_row()
         pretty = {}
-        for (tags,dim,field),value in td_row.items():
+        for (tags,dim,field),value in list(td_row.items()):
             key = '{} : [{}] @{}'.format(
                 ' : '.join([tag_colorer(t) for t in tags]),
                 dim_colorer(dim),
@@ -338,7 +337,7 @@ class Event(object):
         row_update =  {}
         if 'scape_rowid' in self.row:
             row_update['scape_rowid'] = self.row['scape_rowid']
-        for td,v in kw.items():
+        for td,v in list(kw.items()):
             if td.startswith('@'):
                 row_update[td[1:]] = v
             else:
@@ -348,7 +347,7 @@ class Event(object):
 
     def __contains__(self, key):
         key = self._resolve_key(key)
-        if isinstance(key,basestring):
+        if isinstance(key,str):
             # direct field access
             return key in self.row
         else:
@@ -361,7 +360,7 @@ class Event(object):
         if key in lut:
             return lut[key]
 
-        if isinstance(key,basestring):
+        if isinstance(key,str):
             if key.startswith('@'):
                 fname = key[1:]
                 lut[key] = [(fname,self.selection.fields(name=fname))]

@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 import abc
 import collections
 from six import with_metaclass
@@ -44,7 +42,7 @@ class RegistryOperatorMeta(abc.ABCMeta):
         arg_docs = []
         for i,arg_info in enumerate(args):
             attr,default,required,doc,choices = None,None,False,'',None
-            if isinstance(arg_info,basestring):
+            if isinstance(arg_info,str):
                 attr = arg_info
             else:
                 if len(arg_info) == 1:
@@ -130,8 +128,8 @@ class RegistryOperator(with_metaclass(RegistryOperatorMeta,
 
     @classmethod
     def check_args(cls, *pos, **kw):
-        args,values = ((zip(*zip([a['name'] for a in cls.args],pos)) +
-                        zip(*kw.items()))
+        args,values = ((list(zip(*list(zip([a['name'] for a in cls.args],pos)))) +
+                        list(zip(*list(kw.items()))))
                        or
                        ([],[]))
 
@@ -182,7 +180,7 @@ class RegistryOperator(with_metaclass(RegistryOperatorMeta,
     def generator(self):
         raise NotImplementedError('Must be implemented in subclass')
 
-    def next(self):
+    def __next__(self):
         for value in self.generator:
             yield value
 

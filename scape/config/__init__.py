@@ -37,22 +37,23 @@ import logging as _logging
 import traceback
 from datetime import datetime
 
+import scape.utils
 
 __all__ = ['logging', 'data']
 
 
 _log = scape.utils.new_log('scape.config')
 
-from scape.config.config import (
-    Config, default_config
+from .config import (
+    ConfigBase, Config, default_config, expand_vars,
 )
 
 
-from scape.config.logging import (
+from .logging import (
     setup_logging, setup_platform_logging, setup_sge_logging,
 )
 
-from scape.config.data import (
+from .data import (
     data_path, groups_path, splunk_raw_data_path,
     splunk_data_path, splunk_csv_paths, inbox_path,
     home_path,

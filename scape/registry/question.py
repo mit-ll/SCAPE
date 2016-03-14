@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 import inspect
 import re
 import pprint
@@ -59,7 +57,8 @@ from scape.registry.event import (
     EventSet, EventFlatSet, EventGraph, EventDiGraph, EventList, Event,
 )
 
-import scape.registry.spark
+import scape.spark
+from functools import reduce
 
 _log = new_log('scape.registry.question')
 
@@ -115,7 +114,7 @@ class QuestionParser(lrparsing.Grammar):
 def test(expr):
     #print lrparsing.repr_grammar(QuestionParser)
     parse_tree = QuestionParser.parse(expr)
-    print(QuestionParser.repr_parse_tree(parse_tree))
+    print((QuestionParser.repr_parse_tree(parse_tree)))
     return parse_tree
 
 class QuestionHandler(object):
@@ -179,7 +178,7 @@ class QuestionHandler(object):
         else:
             parts = node[2::2]
 
-        values = reduce(lambda a,b:a+b,map(self.handle,parts))
+        values = reduce(lambda a,b:a+b,list(map(self.handle,parts)))
         return values
 
     def handle_var(self,node):
@@ -252,7 +251,7 @@ class QuestionHandler(object):
         # or a tagged dimension (tag1:tag2:dim)
         lhs = self.handle(node[1])
 
-        if isinstance(lhs, basestring):
+        if isinstance(lhs, str):
             # it's a field
             tagged_dim = None
             field = lhs
@@ -278,7 +277,7 @@ class QuestionHandler(object):
                 value = value.pattern
                 condition_class = RegexCondition
             else:
-                if not isinstance(value,basestring):
+                if not isinstance(value,str):
                     # If it was a variable that resolved to a
                     # non-string (integers, etc.), then turn it into a
                     # string
@@ -326,7 +325,7 @@ class QuestionHandler(object):
                             condition = reduce(lambda a,b:a|b,cobjs)
                             conditions.setdefault(T,[]).append(condition)
 
-            return {k:reduce(lambda a,b:a|b,v) for k,v in conditions.items()}
+            return {k:reduce(lambda a,b:a|b,v) for k,v in list(conditions.items())}
 
         if field is not None:
             tagged_dims = set()
@@ -338,7 +337,7 @@ class QuestionHandler(object):
         tagged_dims, resolver = self.handle_equal(node)
         def notresolver(all_tagged_dims,resolver=resolver):
             conditions = resolver(all_tagged_dims)
-            for T, condition in conditions.items():
+            for T, condition in list(conditions.items()):
                 conditions[T] = ~condition
             return conditions
         return tagged_dims, notresolver
@@ -370,12 +369,12 @@ class QuestionHandler(object):
             # call resolvers with tagged dimensions for each side of
             # the boolean (lhs, rhs)
             all_conditions = {sname:res(all_tagged_dims)
-                              for sname,res in resolvers.items()}
+                              for sname,res in list(resolvers.items())}
 
             # merge the two sides, starting with the lhs
             conditions = all_conditions['lh']
             
-            for T, condition in all_conditions['rh'].items():
+            for T, condition in list(all_conditions['rh'].items()):
                 if T not in conditions:
                     conditions[T] = condition
                 else:
@@ -402,7 +401,7 @@ class QuestionHandler(object):
             all_tagged_dims.update(tagged_dims)
             def resolver(all_tagged_dims, res=res):
                 conditions = {}
-                for T,condition in res(all_tagged_dims).items():
+                for T,condition in list(res(all_tagged_dims).items()):
                     conditions[T] = ~condition
                 return conditions
         return all_tagged_dims, resolver
@@ -453,14 +452,14 @@ class Question(OperatorSequence):
         rdelta = scape.utils.get_rdelta(granularity)
 
         counts = None
-        if any(c for c in self.conditions.values()):
+        if any(c for c in list(self.conditions.values())):
             if all(not bool(c.regex_conditions)
-                   for c in self.conditions.values()):
+                   for c in list(self.conditions.values())):
                 counts = {}
                 val_counts = self.value_counts(granularity)
-                for _,vdict in val_counts.items():
+                for _,vdict in list(val_counts.items()):
                     for value in vdict:
-                        for dt,cnt in vdict[value].items():
+                        for dt,cnt in list(vdict[value].items()):
                             c = counts.setdefault(dt,0)
                             counts[dt] = c + cnt
         if counts is None:
@@ -492,7 +491,7 @@ class Question(OperatorSequence):
 
         _log.debug(lines(pprint.pformat(B)))
 
-        return sc.parallelize(B).flatMap(scape.registry.spark.load_events)
+        return sc.parallelize(B).flatMap(scape.spark.load_events)
 
 
     @staticmethod
@@ -555,8 +554,8 @@ class Question(OperatorSequence):
     @property
     def unique_sort(self):
         count_lut = self.unique
-        for td,lut in count_lut.items():
-            count_lut[td] = sorted(lut.items(),key=lambda e:[e[-1]])
+        for td,lut in list(count_lut.items()):
+            count_lut[td] = sorted(list(lut.items()),key=lambda e:[e[-1]])
         return count_lut
     sunique = unique_sort
         
@@ -580,7 +579,7 @@ class Question(OperatorSequence):
 
     @start.setter
     def start(self, start):
-        if isinstance(start,(basestring,date,datetime,timedelta)):
+        if isinstance(start,(str,date,datetime,timedelta)):
             start = date_convert(start)
         else:
             raise ScapeTimeError(
@@ -623,7 +622,7 @@ class Question(OperatorSequence):
                 
     @end.setter
     def end(self, end):
-        if isinstance(end,basestring):
+        if isinstance(end,str):
             if end != 'now':
                 end = date_convert(end)
         elif isinstance(end,(date,datetime,timedelta)):
@@ -649,7 +648,7 @@ class Question(OperatorSequence):
         return self._center
     @center.setter
     def center(self, center):
-        if isinstance(center,(basestring,date,datetime,timedelta)):
+        if isinstance(center,(str,date,datetime,timedelta)):
             center = date_convert(center)
         elif center is not None:
             raise ScapeTimeError(
@@ -817,7 +816,7 @@ class Question(OperatorSequence):
         selects = self.selection.connection.selects(
             start, end, conditions
         )
-        for T, select in selects.items():
+        for T, select in list(selects.items()):
             # Not implementing Registry-aware Operators until a
             # better, more general solution is found
             # # Add the all the (relevant) operators to each Select
@@ -837,7 +836,7 @@ class Question(OperatorSequence):
                 yield Event(row,T)
                     
         
-    def next(self):
+    def __next__(self):
         return next(self.generator)
 
     @property

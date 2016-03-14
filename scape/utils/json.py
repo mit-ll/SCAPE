@@ -1,27 +1,25 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
-from __future__ import absolute_import
 try:
     import simplejson as _json
 except ImportError:
-    import json as _json
+    from . import json as _json
 import ast
 import collections
 from copy import deepcopy
@@ -72,8 +70,8 @@ def json_dict(D,ts_format='%Y-%m-%d %H:%M:%S'):
                     stack.append(value)
 
         elif isinstance(n,dict):
-            for key,value in n.items():
-                if not isinstance(key, basestring):
+            for key,value in list(n.items()):
+                if not isinstance(key, str):
                     key = str(key)
                     del n[key]
                     n[key] = value
@@ -115,7 +113,7 @@ def literal_eval(node_or_string):
         'False': False, 'false': False,
     }
 
-    if isinstance(node_or_string, basestring):
+    if isinstance(node_or_string, (str,bytes)):
         try:
             node_or_string = ast.parse(node_or_string, mode='eval')
         except Exception as e:
@@ -146,14 +144,14 @@ def literal_eval(node_or_string):
              isinstance(node.right, ast.Num) and \
              isinstance(node.right.n, complex) and \
              isinstance(node.left, ast.Num) and \
-             isinstance(node.left.n, (int, long, float)):
+             isinstance(node.left.n, (int, float)):
             left = node.left.n
             right = node.right.n
             if isinstance(node.op, ast.Add):
                 return left + right
             else:
                 return left - right
-        raise ScapeJsonReadError('malformed string')
+        raise ScapeJsonReadError('malformed string: {}'.format(node))
 
     return _convert(node_or_string)
 

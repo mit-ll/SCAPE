@@ -19,7 +19,7 @@
 
 Utilities for dealing with CSV files
 '''
-from __future__ import absolute_import
+
 import sys
 import csv
 from datetime import datetime
@@ -83,7 +83,7 @@ def csv_reader(path,columns=None,header=True,**kw):
     enumerate)
 
     '''
-    if isinstance(path,basestring):
+    if isinstance(path,str):
         with zip_open(path,'rbU') as rfp:
             for i,row in _csv_reader(rfp,columns,header,**kw):
                 yield i,row

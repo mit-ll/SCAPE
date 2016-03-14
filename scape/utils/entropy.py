@@ -14,10 +14,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 ''' Entropy utilities
 '''
 
-from __future__ import division
+
 import math
 from collections import Counter
 
@@ -31,4 +32,4 @@ def entropy(S):
     ''' Shannon entropy of string S '''
     hist = Counter(S)
     N = len(S)
-    return -sum(count/N * math.log(count/N, 2) for count in hist.values())
+    return -sum(count/N * math.log(count/N, 2) for count in list(hist.values()))

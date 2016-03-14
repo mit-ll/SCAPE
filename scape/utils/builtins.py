@@ -15,13 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+
 import pprint
+from collections import OrderedDict
 from copy import deepcopy
 
 from scape.utils.log import new_log
 
-__all__ = ['merge_dicts']
+__all__ = ['merge_dicts_ip','merge_dicts',]
 
 _log = new_log('scape.utils.builtins')
 
@@ -116,3 +117,17 @@ def merge_dicts(*dicts):
     dicts = list(dicts)
     dicts[0] = deepcopy(dicts[0])
     return merge_dicts_ip(*dicts)
+
+def odict_to_dict(odict):
+    '''Convert OrderedDict to normal dictionary recursively
+
+    '''
+    new_dict = dict(odict)
+    stack = [new_dict]
+    while stack:
+        new = stack.pop()
+        for key, value in list(new.items()):
+            if isinstance(value, OrderedDict):
+                new[key] = dict(value)
+                stack.append(new[key])
+    return new_dict

@@ -27,11 +27,11 @@ import logging as _logging
 from datetime import datetime
 import __main__
 
-import scape.config
-
-from scape.config.errors import (
+from .errors import (
     ScapeConfigError, ScapeConfigLoggingError, 
 )
+
+from .config import ConfigBase
 
 from scape.utils import sge
 
@@ -79,18 +79,9 @@ def get_log_level(level):
 
     return level
 
-class ConfigLogging(dict):
+class ConfigLogging(ConfigBase):
     ''' Scape configuration logging mixin
     '''
-
-    config = {
-        "logging": {
-            "log_format": "{{ scape_log_format }}", 
-            "log_level": "{{ scape_log_level }}", 
-            "platform_log_base_dir": "{{ scape_log_path }}", 
-            "user_log_base_dir": "{{ scape_user_log_path }}",
-        },
-    }
 
     def setup_platform_logging(self, level=None):
         log_level = level or self['logging']['log_level']

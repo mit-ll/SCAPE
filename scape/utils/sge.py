@@ -38,7 +38,7 @@
 Handles job dependencies, output redirection, and job script creation.
 """
 
-from __future__ import absolute_import
+
 import os
 import shutil
 import time
@@ -115,7 +115,7 @@ class JobGroup(object):
         self.script += """let "TASK_ID=$SGE_TASK_ID - 1"\n"""
   
         # build the array definitions
-        for key in self.arguments.keys():
+        for key in list(self.arguments.keys()):
             values = self.arguments[key]
             line = ("%s_ARRAY=( " % (key))
             for value in values:
@@ -127,12 +127,12 @@ class JobGroup(object):
             if not self.pivot:
                 total *= len(values)
         if self.pivot:
-            total = max([len(v) for v in self.arguments.values()] or [total])
+            total = max([len(v) for v in list(self.arguments.values())] or [total])
             
         self.script += "\n"
 
         # now, build the decoding logic in the script
-        for key in self.arguments.keys():
+        for key in list(self.arguments.keys()):
             count = len(self.arguments[key])
             self.script += """let "{key}_INDEX=$TASK_ID % {count}"\n""".format(
                 key=key, count=count,
@@ -331,7 +331,7 @@ def generate_name(*name_parts, **options):
     name = NAME_PART_SEP.join([str(p) for p in name_parts])
     opstr = KV_SEP.join(['{}{}{}'.format(k,K_SEP,
                                          v.replace(os.path.sep,PATH_SEP))
-                         for k,v in options.items()])
+                         for k,v in list(options.items())])
     return '{name}{sep}{opstr}'.format(
         name=name, opstr=opstr, sep=NAME_SEP,
         )
@@ -399,7 +399,7 @@ def jobs():
                 job_info_node = None
         elif event=='end' and node.tag == 'job_list':
             job_list = node
-            jdict = job({'jl_'+k:v for k,v in job_list.items()})
+            jdict = job({'jl_'+k:v for k,v in list(job_list.items())})
             for cnode in job_list:
                 jdict[cnode.tag] = cnode.text
             jnodes.append(jdict)

@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 """
 Extract client information from http user agent
 The module does not try to detect all capabilities of browser in current form (it can easily be extended though).
@@ -51,13 +49,13 @@ class DetectorsHub(dict):
             return detectors
         else:
             prefs.insert(0, '')
-            return sorted(detectors, key=lambda d: d.name in prefs and prefs.index(d.name) or sys.maxint)
+            return sorted(detectors, key=lambda d: d.name in prefs and prefs.index(d.name) or sys.maxsize)
 
     def __iter__(self):
         return iter(self._known_types)
 
     def registerDetectors(self):
-        detectors = [v() for v in globals().values() if DetectorBase in getattr(v, '__mro__', [])]
+        detectors = [v() for v in list(globals().values()) if DetectorBase in getattr(v, '__mro__', [])]
         for d in detectors:
             if d.can_register:
                 self.register(d)
@@ -288,7 +286,7 @@ def detect(agent):
         else:
             detectors = _suggested_detectors
         for detector in detectors:
-            print "detector name: ", detector.name
+            print("detector name: ", detector.name)
             if detector.detect(agent, result):
                 prefs = detector.prefs
                 _suggested_detectors = detector._suggested_detectors
@@ -338,7 +336,7 @@ def simple_detect(agent):
 
 
 if __name__ == '__main__':
-    import time
+    from . import time
     import unittest
 
     data = (
@@ -393,8 +391,8 @@ if __name__ == '__main__':
                 detect(agent)
             time_taken = time.time() - then
             no_of_tests = len(self.data) * self.harass_repeat
-            print "\nTime taken for %s detecttions: %s" % (no_of_tests, time_taken)
-            print "Time taken for single detecttion: ", time_taken / (len(self.data) * self.harass_repeat)
+            print("\nTime taken for %s detecttions: %s" % (no_of_tests, time_taken))
+            print("Time taken for single detecttion: ", time_taken / (len(self.data) * self.harass_repeat))
 
     unittest.main()
 

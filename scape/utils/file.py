@@ -19,7 +19,7 @@
 
 Utilities for dealing with files
 '''
-from __future__ import absolute_import
+
 import os
 import stat
 import re

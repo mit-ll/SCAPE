@@ -1,0 +1,42 @@
+events:
+  ips:
+    time: dateTime
+    family: raw
+    table: vast_2013_ips
+    fields:
+      priority:
+        dim: severity
+      operation:
+        dim: action
+      messageCode:
+        dim: code
+        tags:
+        - message
+      protocol:
+        dim: protocol
+      SrcIp:
+        dim: ipv4
+        tags:
+        - source
+      srcPort:
+        dim: port
+        tags:
+        - source
+      destIp:
+        dim: ipv4
+        tags:
+        - dest
+      destPort:
+        dim: port
+        tags:
+        - dest
+      destService:
+        dim: service
+        tags:
+        - dest
+      direction:
+        dim: direction
+      flags:
+        dim: flag
+      command:
+        dim: command

@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 import os
 import sys
 import struct
@@ -78,7 +76,7 @@ class ErfIterator(collections.Iterator):
         _log.info(lines(('__exit__',self)))
         self._close()
 
-    def next(self):
+    def __next__(self):
         for record in self.generator:
             return record
         raise StopIteration
@@ -93,12 +91,12 @@ class ErfIterator(collections.Iterator):
             index += 1
             R = {}
             R['ts'] = struct.unpack('<Q',header[:8])[0]
-            R.update( zip( ('type',   # ERF record type
+            R.update( list(zip( ('type',   # ERF record type
                             'flags',  # Raw flags bit field
                             'rlen',   # Length of entire record
                             'lctr',   # Interstitial loss counter
                             'wlen'),  # Length of packet on wire
-                           struct.unpack('>BBHHH',header[8:]) ) )
+                           struct.unpack('>BBHHH',header[8:]) )) )
             R['iface']  = R['flags'] & 0x03
             R['rx_err'] = R['flags'] & 0x10 != 0
 
@@ -107,13 +105,13 @@ class ErfIterator(collections.Iterator):
             if R['type'] & 0x80:
                 ext_header = self._fp.read(8)
                 R.update(
-                    zip( ('ext_hdr_signature',    # 1 byte
+                    list(zip( ('ext_hdr_signature',    # 1 byte
                           'ext_hdr_payload_hash', # 3 bytes
                           'ext_hdr_filter_color', # 1 byte
                           'ext_hdr_flow_hash',    # 3 bytes
                           ),
                          struct.unpack('>B3sB3s', ext_header)
-                         )
+                         ))
                     )
                 R['pkt'] = self._fp.read( R['rlen'] - 24 )
             else:

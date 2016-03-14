@@ -1,22 +1,20 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 ''' scape.utils.data
 
 Utilities for dealing with Python objects and data generally.
@@ -32,7 +30,7 @@ _log = new_log('scape.utils.data')
 def sortd(d):
     ''' return dictionary items sorted by value
     '''
-    return sorted(d.items(),key=lambda e:e[-1])
+    return sorted(list(d.items()),key=lambda e:e[-1])
 
 def ndigits(N):
     '''Given some number N return number of digits in base10. Negative
@@ -101,6 +99,6 @@ def enumerate_reverse(seq,start=0):
     >>> list(enumerate_reverse(['a','b','c']))
     [(2, 'c'), (1, 'b'), (0, 'a')]
     '''
-    for index in xrange(len(seq)-start-1,-1,-1):
+    for index in range(len(seq)-start-1,-1,-1):
         yield index,seq[index]
 

@@ -1,32 +1,30 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
 #! /usr/bin/env python2.7
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 '''scape.utils.splunk
 
 Utilities for dealing with splunk search heads.
 '''
 
-from __future__ import print_function
-from __future__ import absolute_import
+
+
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import httplib2
 import time
 from datetime import datetime,timedelta
@@ -37,7 +35,7 @@ import traceback
 import io
 import sys
 import csv
-import StringIO
+import io
 import logging
 
 # Dependency:
@@ -49,7 +47,7 @@ import scape.config
 
 import scape.utils
 
-csv.field_size_limit(sys.maxint)
+csv.field_size_limit(sys.maxsize)
 
 _log = logging.getLogger('scape.utils.splunk')
 _log.addHandler(logging.NullHandler())
@@ -108,7 +106,7 @@ class SplunkConnection(object):
         except StopIteration:
             _log.error('No data for last two years')
             return None
-        sio = StringIO.StringIO(results)
+        sio = io.StringIO(results)
         reader = csv.reader(sio)
         columns = next(reader)
         reader = csv.DictReader(sio,columns)
@@ -131,7 +129,7 @@ class SplunkConnection(object):
                 raise KeyError('Too much drift, please fix')
                 #return datetime.now()
             return self.last_time(tried+1)
-        sio = StringIO.StringIO(results)
+        sio = io.StringIO(results)
         reader = csv.reader(sio)
         columns = next(reader)
         reader = csv.DictReader(sio,columns)
@@ -146,7 +144,7 @@ class SplunkConnection(object):
         _,content = http.request(
             self.baseurl+'/services/auth/login','POST',
             headers={},
-            body=urllib.urlencode({'username':self.username,
+            body=urllib.parse.urlencode({'username':self.username,
                                    'password':self.password})
             )
         self.sessionKey = minidom.parseString(content)\
@@ -219,9 +217,9 @@ class SplunkConnection(object):
                 if progress > 95 and not sleep_reset:
                     sleep = 1
                     sleep_reset = True
-                scanned,matched,results = map(
-                    int,map(stats.get,['scanCount','eventCount','resultCount'])
-                    )
+                scanned,matched,results = list(map(
+                    int,list(map(stats.get,['scanCount','eventCount','resultCount']))
+                    ))
                 status = ('{progress:03.1f}%'
                           ' | {scanned} scanned'
                           ' | {matched} matched'
@@ -271,7 +269,7 @@ class SplunkConnection(object):
         results = self.search(query)
         retlist = []
         for r in results:
-            reader = csv.reader(io.StringIO(unicode(r)))
+            reader = csv.reader(io.StringIO(str(r)))
             retlist.extend([str(v[0]) for v in list(reader)[1:]])
         return retlist
 
@@ -314,11 +312,11 @@ class SplunkConnection(object):
             # put all content into a single string
             content = next(results)
             for r in results:
-                sio = StringIO.StringIO(r)
+                sio = io.StringIO(r)
                 reader = csv.reader(sio)
                 columns = next(reader)
                 content += r[sio.tell():]
-            sio = StringIO.StringIO(content)
+            sio = io.StringIO(content)
             reader = csv.reader(sio)
             columns = next(reader)
             reader = csv.DictReader(sio,columns)
@@ -339,7 +337,7 @@ class SplunkConnection(object):
                     name = filename(index,extents[0],output_mode,names[name])
                 else:
                     names[name] = 0
-                writer_io = StringIO.StringIO()
+                writer_io = io.StringIO()
                 writer = csv.DictWriter(writer_io,sorted(columns))
                 writer.writeheader()
                 writer.writerows(rows)
@@ -347,7 +345,7 @@ class SplunkConnection(object):
                         'name':name}
 
             for content in results:
-                reader_io = StringIO.StringIO(content)
+                reader_io = io.StringIO(content)
                 reader = csv.reader(reader_io)
                 columns = next(reader)
                 allColumns.update(columns)
@@ -360,7 +358,7 @@ class SplunkConnection(object):
                         except KeyError:
                             break
                     allRows.append(row)
-                    totalSize += sum(len(v) for v in row.values())+len(row)-1
+                    totalSize += sum(len(v) for v in list(row.values()))+len(row)-1
                     if totalSize > file_size:
                         # write out file
                         extents[1] = self.time(row)
@@ -376,7 +374,7 @@ class SplunkConnection(object):
 
     def query_rows(self,*a,**kw):
         for result in self.query(*a,**kw):
-            rfp = StringIO.StringIO(result['content'])
+            rfp = io.StringIO(result['content'])
             for row in scape.utils.csv_rows(rfp):
                 yield row
 

@@ -1,30 +1,28 @@
-"""
-Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
-of all or any part of this material shall acknowledge the MIT Lincoln 
-Laboratory as the source under the sponsorship of the US Air Force 
-Contract No. FA8721-05-C-0002.
+# Copyright (2016) Massachusetts Institute of Technology.  Reproduction/Use 
+# of all or any part of this material shall acknowledge the MIT Lincoln 
+# Laboratory as the source under the sponsorship of the US Air Force 
+# Contract No. FA8721-05-C-0002.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-"""
-from __future__ import absolute_import
 import os
 import sys
 import argparse
 import subprocess
 import shlex
 import xml.etree.cElementTree as cet
-import cStringIO
+import io
 from datetime import datetime,timedelta
 
 import scape.utils
@@ -54,7 +52,7 @@ class Namespace(object):
         self._dict[key] = value
     def __contains__(self,attr):
         return attr in self._attributes
-    def __nonzero__(self):
+    def __bool__(self):
         return self._type is not None
     def __getattr__(self,attr):
         if attr[0] != '_':
@@ -74,7 +72,7 @@ class Value(str):
 
 class NList(list):
     def __getattr__(self,attr):
-        spaces = filter(None,[getattr(s,attr) for s in self])
+        spaces = [_f for _f in [getattr(s,attr) for s in self] if _f]
         return NList(spaces)
 
 BP = '''
@@ -87,7 +85,7 @@ def parse_pcap_whole(path):
     o,e = P.communicate()
     if P.returncode:
         raise IOError(e)
-    rfp = cStringIO.StringIO(o)
+    rfp = io.StringIO(o)
     generator = cet.iterparse(rfp,events=('start','end'))
 
     event,root = next(generator)
@@ -122,7 +120,7 @@ def parse_pcap_whole(path):
             if not field._attributes:
                 name = field['name'].split('.')[-1]
                 value = Value(field['show'])
-                for k,v in field._dict.items():
+                for k,v in list(field._dict.items()):
                     value[k] = v 
                 setattr(fstack[-1],name,value)
 

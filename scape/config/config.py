@@ -28,7 +28,6 @@ is configured.
 
 '''
 
-from __future__ import absolute_import
 import ast
 import abc
 import json
@@ -39,10 +38,11 @@ import logging as _logging
 import traceback
 from collections import OrderedDict
 from datetime import datetime
-
-from six import with_metaclass
-
-from datetime import datetime
+from typing import *
+from configparser import (
+    ConfigParser, ExtendedInterpolation, InterpolationError
+)
+    
 
 import scape.utils
 from scape.utils import (
@@ -53,23 +53,44 @@ from scape.config.errors import (
     ScapeConfigError, 
 )
 
-from scape.config.data import (
-    ConfigData, 
-)
-
-from scape.config.logging import (
-    ConfigLogging,
-)
-
 _log = scape.utils.new_log('scape.config.config')
 
 DEFAULT_CONFIG_ENV_VAR = 'SCAPE_CONFIG'
 
-def from_environment(env_var=DEFAULT_CONFIG_ENV_VAR):
-    '''Load the JSON from the paths given in the SCAPE_CONFIG environment
-    variable into a list of dictionaries.  Each path should point
-    to a JSON-like object which will be interpretted as a Python
-    dictionary.
+class ScapeConfigParser(ConfigParser):
+    def __init__(self, *a, **kw):
+        kw.setdefault('interpolation',ExtendedInterpolation())
+        super().__init__(*a, **kw)
+        
+    def as_dict(self) -> dict:
+        '''Represent ConfigParser as a dictionary
+
+        http://stackoverflow.com/a/3220891/1869370
+
+        '''
+        D = OrderedDict()
+        for sec_name in self.sections():
+            D[sec_name] = OrderedDict(self.defaults())
+            items = []
+            for option in self.options(sec_name):
+                try:
+                    value = self.get(sec_name, option)
+                except InterpolationError as err:
+                    raw_value = self.get(sec_name, option, raw=True)
+                    expanded = os.path.expandvars(raw_value)
+                    self.set(sec_name, option, expanded)
+                    value = self.get(sec_name, option)
+                items.append((option, value))
+            for key, value in items:
+                D[sec_name][key] = value
+        return D
+
+def from_environment(env_var:str=DEFAULT_CONFIG_ENV_VAR) -> List[dict]:
+    '''Load the configuration files from the paths given in the
+    SCAPE_CONFIG environment variable into a list of dictionaries.
+
+    Each path should point to a INI file which will be interpretted as
+    a Python dictionary.
 
     Returns: list of dictionaries
 
@@ -98,17 +119,19 @@ def from_environment(env_var=DEFAULT_CONFIG_ENV_VAR):
 
     return dicts
 
-def from_paths(paths):
-    '''Load the JSON from the given paths into a list of dictionaries.
-    Each path should point to a JSON-like object which will be
+def from_paths(paths:List[str]) -> List[dict]:
+    '''Load the config file from the given paths into a list of
+    dictionaries.
+
+    Each path should point to a conf/INI file which will be
     interpretted as a Python dictionary.
 
     Parameters:
 
-    - paths (list of strings): list of paths from which to load
-      the JSON configurations into dictionaries
+    - paths: list of paths from which to load the INI configurations
+      into dictionaries
 
-    Returns: list of dictionaries
+    Returns: list of configuration dictionaries
 
     '''
     dicts = []
@@ -138,8 +161,9 @@ def from_paths(paths):
         )
     return dicts
 
-def expand_vars(config):
-    '''Expand all environment variables referenced in Scape configuration
+def expand_vars(config:dict) -> None:
+    '''Expand **in-place** all environment variables referenced in Scape
+    configuration
 
     Recurse through all key-value pairs in Scape configuration
     dictionary, expanding the environment variables referenced in the
@@ -171,8 +195,8 @@ def expand_vars(config):
             elif type(val) in {str,unicode}:
                 D[key] = os.path.expandvars(val)
 
-def expand_registry(config):
-    ''' Expand the registry object
+def expand_registry(config:dict) -> None:
+    ''' Expand the registry object **in-place**
     '''
     if 'registry' in config:
         if 'paths' in config['registry']:
@@ -193,33 +217,162 @@ def expand_registry(config):
             time_events = config['registry']['time_events'].split(os.pathsep)
             config['registry']['time_events'] = time_events
 
-class ConfigVars:
-    root = "${HOME}/scape"
-    home = os.path.join(root, "scape")
-    user_home = "${HOME}/.scape"
-    classes = [
-        'scape.config.Config',
-        'scape.config.data.ConfigData',
-        "scape.config.logging.ConfigLogging",
-    ]
+class ConfigBase(ConfigParser):
+    '''Base class of configuration helper classes.
 
-class ConfigMeta(abc.ABCMeta):
-    def __new__(cls, name, parents, dct):
-        config = dct.setdefault('config',())
-        cdict = OrderedDict()
-        stack = [(config,cdict)]
-        while stack:
-            items = stack.pop()
-            for name, value in items:
-                
-        return super(ConfigMeta,cls).__new__(cls,name,parents,dct)
+    Each scape addon module (e.g. scape_accumulo) will have a
+    configuration file associated with it. If this configuration file
+    contains a class key, then this represents a config mixin class
+    that will be mixed with the Scape Config object by the
+    ConfigManager.
 
-class ConfigBase(with_metaclass(ConfigMeta,dict)):
-    def __init__(self):
+    These Config objects will contain the
+    configuration information in the file. Furthermore, they will
+    provide a number of convenience methods for using that
+    configuration information.
+
+    >>> config = scape.config.default_config()
+    >>> config.accumulo['host']
+
+    '''
+    def __init__(self, *a, **kw):
         pass
+        
+
+    def as_dict(self) -> dict:
+        '''Represent ConfigParser as a dictionary
+
+        http://stackoverflow.com/a/3220891/1869370
+
+        '''
+        D = OrderedDict()
+        for sec_name in self.sections():
+            D[sec_name] = OrderedDict(self.defaults())
+            items = []
+            for option in self.options(sec_name):
+                try:
+                    value = self.get(sec_name, option)
+                except InterpolationError as err:
+                    raw_value = self.get(sec_name, option, raw=True)
+                    expanded = os.path.expandvars(raw_value)
+                    self.set(sec_name, option, expanded)
+                    value = self.get(sec_name, option)
+                items.append((option, value))
+            for key, value in items:
+                D[sec_name][key] = value
+        return D
 
 
-class Config(dict):
+class ConfigManager(object):
+    def __init__(self, paths:List[str]=None, dicts:List[dict]=None, **kw):
+        master_dicts = (
+            self.from_dicts(from_environment()) +
+            self.from_dicts(from_paths(paths)) +
+            self.from_dicts(dicts)
+        )
+
+        self.init_from_dicts(master_dicts)
+
+    def init_from_dicts(self, dicts: List[dict]) -> None:
+        '''Create a configuration object from the given list of
+        dictionaries. The final configuration will be produced from
+        successive merging of the dictionaries. Shell environment
+        variables present in the values of any dictionary will be
+        expanded, and the registry dictionary (if present) will be
+        similarly expanded.
+
+        Parameters:
+
+        - dicts (list of dicts): list of dictionaries to merge into
+          this configuration
+
+        Returns: None
+
+        '''
+        try:
+            scape.utils.merge_dicts_ip(self, dicts)
+            expand_vars(self)
+            expand_registry(self)
+            # errors = self.init_environment()
+            # if errors:
+            #     raise ScapeConfigError("\n\n".join(
+            #         ["** {}".format(e) for e in errors]
+            #     ))
+        except:
+            _log.error(
+                "Merging dictionaries failed: \n"
+                "  Error: \n"
+                "{}".format(
+                    scape.utils.traceback_string(),
+                )
+            )
+
+    def from_dicts(self, dicts: List[dict]) -> List[dict]:
+        '''Verify that every dictionary in the given list of dicts is a valid
+        configuration dictionary. If not, log and raise
+        ScapeConfigError.
+
+        Parameters:
+
+        - dicts (list of dictionaries): list of configuration
+          dictionaries to be verified
+
+        Returns: list of dictionaries
+
+        TODO:
+        - Verification
+
+        '''
+        return list(dicts) if dicts else []
+
+    def init_environment(self) -> List[str]:
+        '''Initialize Scape environment, return errors (if any)
+
+        Performs the following actions:
+        - Creates user home (default: ~/.scape) if it doesn't exist
+        - Confirms user home is writable
+
+        '''
+        errors = (
+            self.create_user_home() +
+            self.check_user_home()
+        )
+        return errors
+
+    def create_user_home(self) -> List[str]:
+        ''' Create user home directory (~/.scape)
+
+        Returns:
+            List of error strings
+        '''
+        errors = []
+        try:
+            if not os.path.exists(self.config.user_home):
+                os.makedirs(self.config.user_home)
+        except OSError:
+            errors.append(
+                "Could not create SCAPE_USER_HOME: \n"
+                "{}".format(
+                    scape.utils.traceback_string(),
+                )
+            )
+
+        return errors
+
+    def check_user_home(self) -> List[str]:
+        ''' Confirms that user home is writable, returns errors if any
+
+        Returns:
+            List of error strings
+        '''
+        errors = []
+        if not os.access(self.config.user_home, os.W_OK):
+            errors.append("SCAPE_USER_HOME is not writable.")
+
+        return errors
+        
+
+class Config(ConfigBase):
     '''Base class for Scape configuration dictionary
 
     This dictionary object represents the configuration settings for
@@ -239,15 +392,8 @@ class Config(dict):
       cumbersome. Will need more thought.
 
     '''
-
-    config = (
-        ("root", root),
-        ("home", home),
-        ("user_home", user_home),
-        ("classes", classes),
-    )
     
-    def __init__(self, paths=None, dicts=None):
+    def __init__(self, paths:List[str]=None, dicts:List[dict]=None, **kw):
         '''Constructor for Config dictionary
 
         Load the configuration information into memory using this
@@ -272,6 +418,8 @@ class Config(dict):
         - dicts (list of dictionaries): list of dictionaries of
           configuration information
         '''
+        super().__init__()
+
         master_dicts = (
             self.from_dicts(from_environment()) +
             self.from_dicts(from_paths(paths)) +
@@ -281,7 +429,7 @@ class Config(dict):
         self.init_from_dicts(master_dicts)
 
     @property
-    def user_home(self):
+    def user_home(self) -> str:
         '''Path in user's home directory where Scape configuration
         information is stored (default is ~/.scape)
 
@@ -289,7 +437,7 @@ class Config(dict):
         home_dir = os.path.abspath(self['user_home'])
         return home_dir
 
-    def init_from_dicts(self, dicts):
+    def init_from_dicts(self, dicts: List[dict]) -> None:
         '''Load this configuration object from the given list of
         dictionaries. The final configuration will be produced from
         successive merging of the dictionaries. Shell environment
@@ -307,8 +455,8 @@ class Config(dict):
         '''
         try:
             scape.utils.merge_dicts_ip(self, dicts)
-            self.expand_vars()
-            self.expand_registry()
+            expand_vars(self)
+            expand_registry(self)
             # errors = self.init_environment()
             # if errors:
             #     raise ScapeConfigError("\n\n".join(
@@ -323,7 +471,7 @@ class Config(dict):
                 )
             )
 
-    def from_dicts(self, dicts):
+    def from_dicts(self, dicts: List[dict]) -> List[dict]:
         '''Verify that every dictionary in the given list of dicts is a valid
         configuration dictionary. If not, log and raise
         ScapeConfigError.
@@ -341,19 +489,20 @@ class Config(dict):
         '''
         return list(dicts) if dicts else []
 
-    def get(self,key,default={}):
+    def get(self, key:str, default:dict={}) -> Union[str, dict]:
         '''Same as normal dict object's get method, except that the default
         value is a dictionary (i.e. for chained get calls)
 
         '''
-        return dict.get(self,key,default)
+        return dict.get(self, key, default)
 
 class ConfigInitializer(object):
     ''' Given a Scape Config dictionary, initialize the environment
     '''
-    def __init__(self, config):
+    def __init__(self, config: dict):
         self.config = config
-    def init_environment(self):
+
+    def init_environment(self) -> List[str]:
         '''Initialize Scape environment, return errors (if any)
 
         Performs the following actions:
@@ -367,7 +516,7 @@ class ConfigInitializer(object):
         )
         return errors
 
-    def create_user_home(self):
+    def create_user_home(self) -> List[str]:
         ''' Create user home directory (~/.scape)
 
         Returns:
@@ -387,7 +536,7 @@ class ConfigInitializer(object):
 
         return errors
 
-    def check_user_home(self):
+    def check_user_home(self) -> List[str]:
         ''' Confirms that user home is writable, returns errors if any
 
         Returns:

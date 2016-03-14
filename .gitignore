@@ -85,3 +85,6 @@ celerybeat-schedule
 [#]*[#]
 .[#]*[#]
 .[#]*
+
+# 2to3 backup versions
+*.bak
