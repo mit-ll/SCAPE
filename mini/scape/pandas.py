@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import pandas
 from types import MethodType
 from scape.registry import DataSource
@@ -23,11 +23,11 @@ class _PandasDataFrameDataSource(DataSource):
         return newdf
 
 def __pandas_or_filter(df, dsmd, td, value):
-    if isinstance(td, basestring):
+    if isinstance(td, str):
         td = tagsdim(td)
     fields = dsmd.fields_matching(td)
     if not fields:
-        print "Useless filter: Could not find fields matching: " + str(td) + " among\n" + str(dsmd)
+        print("Useless filter: Could not find fields matching: " + str(td) + " among\n" + str(dsmd))
         return df
     f,rst = fields[0],fields[1:]
     filterv = df[f]==value
@@ -44,5 +44,5 @@ def __scape_or_filter(self, td, value):
     newdf.add_registry(self.__scape_metadata)
     return newdf
 
-pandas.core.frame.DataFrame.add_registry = MethodType(__scape_add_registry, None, pandas.core.frame.DataFrame)
-pandas.core.frame.DataFrame.or_filter = MethodType(__scape_or_filter, None, pandas.core.frame.DataFrame)
+pandas.core.frame.DataFrame.add_registry = MethodType(__scape_add_registry, pandas.core.frame.DataFrame())
+pandas.core.frame.DataFrame.or_filter = MethodType(__scape_or_filter, pandas.core.frame.DataFrame())

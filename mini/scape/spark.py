@@ -1,6 +1,17 @@
-from __future__ import absolute_import
+import os
+import sys
+import pathlib
 
-import pyspark
+try:
+    import pyspark
+except ImportError:
+    _spark_home = pathlib.Path(os.environ['SPARK_HOME'])
+    sys.path.extend(
+        [str(p) for p in _spark_home.joinpath('python/lib').glob('*')]
+    )
+    import pyspark
+import pyspark.sql    
+    
 from types import MethodType
 
 from scape.registry import DataSource
@@ -27,11 +38,11 @@ class _SparkDataFrameDataSource(DataSource):
         return newdf
 
 def __or_filtered(df, dsmd, td, value):
-    if isinstance(td, basestring):
+    if isinstance(td, str):
         td = tagsdim(td)
     fields = dsmd.fields_matching(td)
     if not fields:
-        print "Useless filter: Could not find fields matching: " + str(td) + " among\n" + str(dsmd)
+        print("Useless filter: Could not find fields matching: " + str(td) + " among\n" + str(dsmd))
         return df
     f,rst = fields[0],fields[1:]
     filterv = df[f]==value
@@ -45,6 +56,8 @@ def __scape_or_filter(self, td, value):
     newdf = __or_filtered(self, self.__scape_metadata, td, value)
     newdf.__scape_metadata = self.__scape_metadata
     return newdf
-    
-pyspark.sql.dataframe.DataFrame.add_registry = MethodType(__scape_add_registry, None, pyspark.sql.dataframe.DataFrame)
-pyspark.sql.dataframe.DataFrame.or_filter = MethodType(__scape_or_filter, None, pyspark.sql.dataframe.DataFrame)
+
+_sctx = pyspark.sql.SQLContext(sc)
+_df = _sctx.createDataFrame([{'a':1}])
+pyspark.sql.dataframe.DataFrame.add_registry = MethodType(__scape_add_registry,_df)
+pyspark.sql.dataframe.DataFrame.or_filter = MethodType(__scape_or_filter, _df)

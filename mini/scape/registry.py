@@ -56,7 +56,7 @@ class Registry(object):
 
 class TableMetadata(object):
     def _from_map(self,m):
-        for (k,v) in m.items():
+        for (k,v) in list(m.items()):
             tags = [Tag(t) for t in (v['tags'] if 'tags' in v else [])]
             dim = Dim(v['dim']) if 'dim' in v else None
             yield (k,TagsDim(tags,dim))
@@ -75,7 +75,7 @@ class TableMetadata(object):
         return self._tagsdim_subset(td, metadata_td)
         
     def fields_matching(self,td):
-        return [f for f,ftd in self._map.items() if self.tagsdim_matches(td,Field(f))]
+        return [f for f,ftd in list(self._map.items()) if self.tagsdim_matches(td,Field(f))]
     
     def __repr__(self):
         return str(self._map)
