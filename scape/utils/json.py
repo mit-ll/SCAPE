@@ -19,7 +19,7 @@
 try:
     import simplejson as _json
 except ImportError:
-    from . import json as _json
+    import json as _json
 import ast
 import collections
 from copy import deepcopy
