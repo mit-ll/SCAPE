@@ -21,8 +21,6 @@ import unittest
 
 import scape.utils
 
-from mock import Mock
-
 class UtilsLogTest(unittest.TestCase):
     def test_lines(self):
         self.assertEquals(
