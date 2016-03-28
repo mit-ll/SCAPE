@@ -25,6 +25,7 @@ import stat
 import re
 import gzip
 import bz2
+import io
 import pprint
 
 from scape.utils.log import new_log
@@ -97,14 +98,24 @@ def zip_open(path,mode='rb'):
     '''
     if tarfile_re.search(path):
         _log.warn("Using zip_open on TAR file: {}".format(path))
+
     if path.endswith('.zip'):
         _log.warn('Using zip_open on ZIP file: {}'.format(path))
 
     if path.endswith('.gz'):
-        fp = gzip.open(path,mode)
+        fp = io.TextIOWrapper(
+            io.BufferedReader(
+                gzip.open(path, mode)
+            ), encoding='utf-8', errors='ignore',
+        )
     elif path.endswith('.bz2'):
-        fp = bz2.BZ2File(path,mode)
+        fp = io.TextIOWrapper(
+            io.BufferedReader(
+                bz2.BZ2File(path,mode)
+            ), encoding='utf-8', errors='ignore',
+        )
     else:
         fp = open(path,mode)
+
     return fp
 
