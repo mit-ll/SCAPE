@@ -42,7 +42,7 @@ class TestExistingPath(TestCase):
 
     def test_good_path(self):
         path_test = args.existing_path('bad path {path}')
-        self.assertEquals(path_test(self.temp_file_path),
+        self.assertEqual(path_test(self.temp_file_path),
                           self.temp_file_path)
 
     def test_bad_path(self):
@@ -57,61 +57,61 @@ class TestDeltaConvert(TestCase):
 
     def test_bin_sizes_positive(self):
         # seconds
-        self.assertEquals(self.convert('1s'),timedelta(seconds=1))
+        self.assertEqual(self.convert('1s'),timedelta(seconds=1))
         # minutes
-        self.assertEquals(self.convert('1m'),timedelta(minutes=1))
+        self.assertEqual(self.convert('1m'),timedelta(minutes=1))
         # hours
-        self.assertEquals(self.convert('1h'),timedelta(hours=1))
+        self.assertEqual(self.convert('1h'),timedelta(hours=1))
         # days
-        self.assertEquals(self.convert('1d'),timedelta(days=1))
+        self.assertEqual(self.convert('1d'),timedelta(days=1))
         # weeks
-        self.assertEquals(self.convert('1w'),timedelta(weeks=1))
+        self.assertEqual(self.convert('1w'),timedelta(weeks=1))
 
     def test_bin_sizes_negative(self):
         # seconds
-        self.assertEquals(self.convert('-1s'),timedelta(seconds=-1))
+        self.assertEqual(self.convert('-1s'),timedelta(seconds=-1))
         # minutes
-        self.assertEquals(self.convert('-1m'),timedelta(minutes=-1))
+        self.assertEqual(self.convert('-1m'),timedelta(minutes=-1))
         # hours
-        self.assertEquals(self.convert('-1h'),timedelta(hours=-1))
+        self.assertEqual(self.convert('-1h'),timedelta(hours=-1))
         # days
-        self.assertEquals(self.convert('-1d'),timedelta(days=-1))
+        self.assertEqual(self.convert('-1d'),timedelta(days=-1))
         # weeks
-        self.assertEquals(self.convert('-1w'),timedelta(weeks=-1))
+        self.assertEqual(self.convert('-1w'),timedelta(weeks=-1))
 
     def test_positive_composite(self):
         # all
-        self.assertEquals(self.convert('1s1m1h1d1w'),
+        self.assertEqual(self.convert('1s1m1h1d1w'),
                           timedelta(seconds=1,minutes=1,hours=1,
                                     days=1,weeks=1))
         # all, order-invariant
-        self.assertEquals(self.convert('1w1m1d1h1s'),
+        self.assertEqual(self.convert('1w1m1d1h1s'),
                           timedelta(seconds=1,minutes=1,hours=1,
                                     days=1,weeks=1))
 
     def test_negative_composite_single_sign(self):
         # all
-        self.assertEquals(self.convert('-1s1m1h1d1w'),
+        self.assertEqual(self.convert('-1s1m1h1d1w'),
                           timedelta(seconds=-1,minutes=-1,hours=-1,
                                     days=-1,weeks=-1))
         # all, order-invariant
-        self.assertEquals(self.convert('-1w1m1d1h1s'),
+        self.assertEqual(self.convert('-1w1m1d1h1s'),
                           timedelta(seconds=-1,minutes=-1,hours=-1,
                                     days=-1,weeks=-1))
 
     def test_negative_composite_multiple_signs(self):
         # all
-        self.assertEquals(self.convert('-1s-1m-1h-1d-1w'),
+        self.assertEqual(self.convert('-1s-1m-1h-1d-1w'),
                           timedelta(seconds=-1,minutes=-1,hours=-1,
                                     days=-1,weeks=-1))
         # all, order-invariant
-        self.assertEquals(self.convert('-1w-1m-1d-1h-1s'),
+        self.assertEqual(self.convert('-1w-1m-1d-1h-1s'),
                           timedelta(seconds=-1,minutes=-1,hours=-1,
                                     days=-1,weeks=-1))
 
     def test_mixed_composite(self):
         # all
-        self.assertEquals(self.convert('-1s1m-1h1d-1w'),
+        self.assertEqual(self.convert('-1s1m-1h1d-1w'),
                           timedelta(seconds=-1,minutes=1,hours=-1,
                                     days=1,weeks=-1))
     
@@ -124,7 +124,7 @@ class TestDeltaConvert(TestCase):
 
     def test_zeros(self):
         now = datetime.now()
-        self.assertEquals(now + self.convert('0s0m0h0d0w'),now)
+        self.assertEqual(now + self.convert('0s0m0h0d0w'),now)
         
 
 class TestDateConvert(TestDeltaConvert):
@@ -137,52 +137,52 @@ class TestDateConvert(TestDeltaConvert):
         for fmt in odd_formats:
             ts = now.strftime(fmt)
             dt = datetime.strptime(ts,fmt)
-            self.assertEquals(self.convert(ts),dt)
+            self.assertEqual(self.convert(ts),dt)
 
     def test_standard_timestamps(self):
         ts = '2013-03-05 12:45:25'
         dt = dateutil.parser.parse(ts)
-        self.assertEquals(self.convert(ts),dt)
+        self.assertEqual(self.convert(ts),dt)
 
 class TestParseTimes(TestCase):
     def test_start_end_none(self):
         start,end = None,None
-        self.assertEquals(args.parse_times(start,end),(start,end))
+        self.assertEqual(args.parse_times(start,end),(start,end))
 
     def test_start_dt_end_dt(self):
         start = datetime.now()
         end = start + timedelta(minutes=1)
-        self.assertEquals(args.parse_times(start,end),(start,end))
+        self.assertEqual(args.parse_times(start,end),(start,end))
 
     def test_start_dt_end_delta(self):
         start = datetime.now()
         end = timedelta(minutes=1)
-        self.assertEquals(args.parse_times(start,end),(start,start+end))
+        self.assertEqual(args.parse_times(start,end),(start,start+end))
 
     def test_end_dt_start_delta(self):
         start = timedelta(minutes=1)
         end = datetime.now()
-        self.assertEquals(args.parse_times(start,end),(end - start,end))
+        self.assertEqual(args.parse_times(start,end),(end - start,end))
 
     def test_start_dt_end_dt_str(self):
         start = '2014-05-01T10:25:11'
         end = '2014-05-01T10:30:00'
-        start_dt,end_dt = map(dateutil.parser.parse,[start,end])
-        self.assertEquals(args.parse_times(start,end),(start_dt,end_dt))
+        start_dt,end_dt = list(map(dateutil.parser.parse,[start,end]))
+        self.assertEqual(args.parse_times(start,end),(start_dt,end_dt))
 
     def test_start_dt_end_delta_str(self):
         start = '2014-05-01T10:25:11'
         start_dt = dateutil.parser.parse(start)
         end = '1m'
         end_dt = start_dt + timedelta(minutes=1)
-        self.assertEquals(args.parse_times(start,end),(start_dt,end_dt))
+        self.assertEqual(args.parse_times(start,end),(start_dt,end_dt))
 
     def test_end_dt_start_delta_str(self):
         end = '2014-05-01T10:25:11'
         end_dt = dateutil.parser.parse(end)
         start = '1m'
         start_dt = end_dt - timedelta(minutes=1)
-        self.assertEquals(args.parse_times(start,end),(start_dt,end_dt))
+        self.assertEqual(args.parse_times(start,end),(start_dt,end_dt))
 
 
 if __name__=='__main__':

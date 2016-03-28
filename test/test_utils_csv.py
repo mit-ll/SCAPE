@@ -57,13 +57,13 @@ class TestCSVRow(TestCase):
             shutil.rmtree(self.temp_dir)
 
     def test_header(self):
-        self.assertEquals(
+        self.assertEqual(
             list(scape.utils.csv.csv_rows(self.path['header'])),
             self.drows
         )
 
     def test_no_header(self):
-        self.assertEquals(
+        self.assertEqual(
             list(scape.utils.csv.csv_rows(self.path['noheader'],
                                           columns=self.columns,
                                           header=False)),

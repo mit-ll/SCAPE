@@ -20,9 +20,10 @@ import tempfile
 import shutil
 import unittest
 from unittest import TestCase
-import StringIO
+import io
 
 import scape.utils.decorators as decorators
+from functools import reduce
 
 class TestMemoizationDecorators(TestCase):
     values = [1,2,3]
@@ -38,15 +39,15 @@ class TestMemoizationDecorators(TestCase):
 
         x = X()
 
-        self.assertEquals(x.times_called,0)
+        self.assertEqual(x.times_called,0)
 
-        self.assertEquals(x.lazy_sum,sum(self.values))
+        self.assertEqual(x.lazy_sum,sum(self.values))
 
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,1)
 
         x.lazy_sum
 
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,1)
         
     def test_memoized_property_with_prop_none(self):
         class X(object):
@@ -60,15 +61,15 @@ class TestMemoizationDecorators(TestCase):
 
         x = X()
 
-        self.assertEquals(x.times_called,0)
+        self.assertEqual(x.times_called,0)
 
-        self.assertEquals(x.lazy_sum,sum(self.values))
+        self.assertEqual(x.lazy_sum,sum(self.values))
 
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,1)
 
         x.lazy_sum
 
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,1)
 
     def test_watch_property(self):
         class X(object):
@@ -82,44 +83,44 @@ class TestMemoizationDecorators(TestCase):
 
         x = X()
 
-        self.assertEquals(x.times_called,0)
-        self.assertEquals(x.lazy_sum,sum(self.values))
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,0)
+        self.assertEqual(x.lazy_sum,sum(self.values))
+        self.assertEqual(x.times_called,1)
 
         x.lazy_sum
 
-        self.assertEquals(x.times_called,1)
+        self.assertEqual(x.times_called,1)
 
         x.values = self.values2
-        self.assertEquals(x.times_called,1)
-        self.assertEquals(x.lazy_sum,sum(self.values2))
-        self.assertEquals(x.times_called,2)
+        self.assertEqual(x.times_called,1)
+        self.assertEqual(x.lazy_sum,sum(self.values2))
+        self.assertEqual(x.times_called,2)
 
         x.lazy_sum
 
-        self.assertEquals(x.times_called,2)
+        self.assertEqual(x.times_called,2)
 
         x.lazy_sum_touch()
-        self.assertEquals(x.times_called,2)
-        self.assertEquals(x.lazy_sum,sum(self.values2))
-        self.assertEquals(x.times_called,3)
+        self.assertEqual(x.times_called,2)
+        self.assertEqual(x.lazy_sum,sum(self.values2))
+        self.assertEqual(x.times_called,3)
 
         x.lazy_sum
 
-        self.assertEquals(x.times_called,3)
+        self.assertEqual(x.times_called,3)
 
     def test_singleton(self):
         @decorators.singleton
         def calc():
             calc.times_called += 1
-            return reduce(lambda x,y:x+y,range(10))
+            return reduce(lambda x,y:x+y,list(range(10)))
         calc.times_called = 0
 
-        self.assertEquals(calc(), 45)
-        self.assertEquals(calc.times_called, 1)
+        self.assertEqual(calc(), 45)
+        self.assertEqual(calc.times_called, 1)
 
-        self.assertEquals(calc(), 45)
-        self.assertEquals(calc.times_called, 1)
+        self.assertEqual(calc(), 45)
+        self.assertEqual(calc.times_called, 1)
 
         
 class TestReturnNulls(TestCase):
@@ -128,7 +129,7 @@ class TestReturnNulls(TestCase):
         def test():
             return {'key0': 'x', 'key1': [], 'key2': 'a'}
 
-        self.assertEquals(test(), {'key2':'a'})
+        self.assertEqual(test(), {'key2':'a'})
 
 if __name__=='__main__':
     unittest.main()

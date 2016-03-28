@@ -23,11 +23,11 @@ import scape.utils
 
 class UtilsLogTest(unittest.TestCase):
     def test_lines(self):
-        self.assertEquals(
+        self.assertEqual(
             scape.utils.lines('a','b'),
             '\na\nb'
         )
-        self.assertEquals(
+        self.assertEqual(
             scape.utils.lines('a','b',('c','d')),
             '\na\nb\nc d'
         )

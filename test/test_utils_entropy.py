@@ -22,19 +22,19 @@ import unittest
 import scape.utils
 
 def alphabet(size):
-    return ''.join(map(chr,range(size)))
+    return ''.join(map(chr,list(range(size))))
 
 class TestEntropy(unittest.TestCase):
     def test_entropy(self):
-        self.assertEquals(
+        self.assertEqual(
             scape.utils.entropy(alphabet(1)),
             0
         )
-        self.assertEquals(
+        self.assertEqual(
             scape.utils.entropy(alphabet(2)),
             1.0,
         )
-        self.assertEquals(
+        self.assertEqual(
             scape.utils.entropy(alphabet(4)),
             2.0,
         )

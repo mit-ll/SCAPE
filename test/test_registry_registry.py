@@ -88,7 +88,7 @@ DATA = {
 
 @singleton
 def registry():
-    import test_registry_connection
+    from . import test_registry_connection
     connection = test_registry_connection.simple_connection()
 
     return scape.registry.registry.Registry(
@@ -122,8 +122,8 @@ class TestRegistry(TestCase):
         self.assertTrue(bool(self.registry.question))
 
     def test_registry_dict(self):
-        self.assertEquals(len(self.registry.registry_dict),2)
-        self.assertEquals(
+        self.assertEqual(len(self.registry.registry_dict),2)
+        self.assertEqual(
             set(self.registry.registry_dict.keys()),
             {'name','events'}
         )
@@ -134,7 +134,7 @@ class TestRegistry(TestCase):
 
     def test_graph_nodes(self):
         graph = self.registry.graph
-        self.assertEquals(
+        self.assertEqual(
             len(graph.nodes()),
             ( 2 +               # events (e0, e1)
               6 +               # fields ( e0:ts, e0:f0, e0:f1,
@@ -148,7 +148,7 @@ class TestRegistry(TestCase):
 
     def test_graph_edges(self):
         graph = self.registry.graph
-        self.assertEquals(
+        self.assertEqual(
             len(graph.edges()),
             ( 8 +               # (fields -> tags)
               6 +               # (events -> fields)

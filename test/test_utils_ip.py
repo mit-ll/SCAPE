@@ -28,32 +28,32 @@ class TestIpFuncs(TestCase):
         self.assertFalse(ip.is_ip('256.1.1.1'))
 
     def test_ip2num(self):
-        self.assertEquals(ip.ip2num('0.0.0.0'),0)
-        self.assertEquals(ip.ip2num('0.0.0.1'),1<<0)
-        self.assertEquals(ip.ip2num('0.0.1.0'),1<<8)
-        self.assertEquals(ip.ip2num('0.1.0.0'),1<<16)
-        self.assertEquals(ip.ip2num('1.0.0.0'),1<<24)
-        self.assertEquals(ip.ip2num('255.255.255.255'),2**32-1)
-        self.assertEquals(
+        self.assertEqual(ip.ip2num('0.0.0.0'),0)
+        self.assertEqual(ip.ip2num('0.0.0.1'),1<<0)
+        self.assertEqual(ip.ip2num('0.0.1.0'),1<<8)
+        self.assertEqual(ip.ip2num('0.1.0.0'),1<<16)
+        self.assertEqual(ip.ip2num('1.0.0.0'),1<<24)
+        self.assertEqual(ip.ip2num('255.255.255.255'),2**32-1)
+        self.assertEqual(
             ip.ip2num('23.35.202.55')-ip.ip2num('23.35.202.54'),
             1
         )
 
     def test_num2ip(self):
-        self.assertEquals(ip.num2ip(0),'0.0.0.0')
-        self.assertEquals('0.0.0.1',ip.num2ip(1<<0))
-        self.assertEquals('0.0.1.0',ip.num2ip(1<<8))
-        self.assertEquals('0.1.0.0',ip.num2ip(1<<16))
-        self.assertEquals('1.0.0.0',ip.num2ip(1<<24))
-        self.assertEquals(ip.num2ip(2**32-1),'255.255.255.255')
+        self.assertEqual(ip.num2ip(0),'0.0.0.0')
+        self.assertEqual('0.0.0.1',ip.num2ip(1<<0))
+        self.assertEqual('0.0.1.0',ip.num2ip(1<<8))
+        self.assertEqual('0.1.0.0',ip.num2ip(1<<16))
+        self.assertEqual('1.0.0.0',ip.num2ip(1<<24))
+        self.assertEqual(ip.num2ip(2**32-1),'255.255.255.255')
 
 
     def test_sort_ips(self):
         ips = ['1.2.3.4','10.2.3.4','2.3.4.5']
-        self.assertEquals(
+        self.assertEqual(
             ip.sort_ips(ips),['1.2.3.4','2.3.4.5','10.2.3.4'],
         )
-        self.assertEquals(
+        self.assertEqual(
             sorted(ips),['1.2.3.4','10.2.3.4','2.3.4.5'],
         )
 

@@ -38,7 +38,7 @@ from scape.registry.exceptions import (
 class TestOperators(TestCase):
     @memoized_property
     def registry(self):
-        import test_registry_registry
+        from . import test_registry_registry
         return test_registry_registry.registry_with_data()
 
     @memoized_property

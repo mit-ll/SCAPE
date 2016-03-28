@@ -28,30 +28,30 @@ import scape.utils.json as json
 
 class TestMergeDicts(TestCase):
     def test(self):
-        self.assertEquals(
+        self.assertEqual(
             json.merge_dicts({'a':[1]},{'a':[1,2]}),
             {'a': [1, 1, 2]},
         )
-        self.assertEquals(
+        self.assertEqual(
             json.merge_dicts({'a':(1,)},{'a':(1,2)}),
             {'a': (1, 1, 2)},
         )
-        self.assertEquals(
+        self.assertEqual(
             json.merge_dicts({'a':{1}},{'a':{1,2}}),
             {'a': {1, 2}},
         )
-        self.assertEquals(
+        self.assertEqual(
             json.merge_dicts({'a':{'b':4}},{'a':{'b':8}}),
             {'a': {'b':8}},
         )
 
 class TestJsonDict(TestCase):
     def test(self):
-        self.assertEquals(
+        self.assertEqual(
             json.json_dict({'ts': datetime.datetime(2014,10,5,12)}),
             {'ts': '2014-10-05 12:00:00'},
         )
-        self.assertEquals(
+        self.assertEqual(
             json.json_dict({'a': [{1,2,3}, 'b', (1,2)]}),
             {'a': [[1,2,3], 'b', [1,2]]},
         )
@@ -110,19 +110,19 @@ class TestReadJson(TestCase):
 
     def test_read_json_data(self):
         # standard JSON
-        self.assertEquals(json.read_json_data(s_json()),
+        self.assertEqual(json.read_json_data(s_json()),
                           {'a': [1,2,3], 'b': 1.0, 'c': 'string'})
 
         # non-standard JSON
-        self.assertEquals(json.read_json_data(ns_json()),
+        self.assertEqual(json.read_json_data(ns_json()),
                           {'a': [1,2,3], 'b': 1.0, 'c': 'string'})
 
     def test_read_json(self):
-        self.assertEquals(json.read_json(self.temp_json_path),
+        self.assertEqual(json.read_json(self.temp_json_path),
                           {'a': [1,2,3], 'b': 1.0, 'c': 'string'})
 
-        for path in self.temp_json_path_comp.values():
-            self.assertEquals(json.read_json(path),
+        for path in list(self.temp_json_path_comp.values()):
+            self.assertEqual(json.read_json(path),
                               {'a': [1,2,3], 'b': 1.0, 'c': 'string'})
 
     def test_read_json_data_fail(self):

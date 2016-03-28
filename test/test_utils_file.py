@@ -41,8 +41,8 @@ class TestMakedirs(TestCase):
 
         self.assertTrue(os.path.exists(path))
 
-        self.assertEquals(root, self.temp_dir)
-        self.assertEquals(newdirs, dirs)
+        self.assertEqual(root, self.temp_dir)
+        self.assertEqual(newdirs, dirs)
 
     def test_makedirs_rwx(self):
         dirs = ['makesdirs_rwx','new','dir']
@@ -51,8 +51,8 @@ class TestMakedirs(TestCase):
 
         self.assertTrue(os.path.exists(path))
 
-        self.assertEquals(root, self.temp_dir)
-        self.assertEquals(newdirs, dirs)
+        self.assertEqual(root, self.temp_dir)
+        self.assertEqual(newdirs, dirs)
 
         for i in range(len(dirs)):
             p = os.path.join(self.temp_dir,*dirs[:i+1])
@@ -65,8 +65,8 @@ class TestMakedirs(TestCase):
 
         self.assertTrue(os.path.exists(path))
 
-        self.assertEquals(root, self.temp_dir)
-        self.assertEquals(newdirs, dirs)
+        self.assertEqual(root, self.temp_dir)
+        self.assertEqual(newdirs, dirs)
 
         for i in range(len(dirs)):
             p = os.path.join(self.temp_dir,*dirs[:i+1])
@@ -105,10 +105,10 @@ class TestZipOpen(TestCase):
             shutil.rmtree(self.temp_dir)
 
     def test_zip_open(self):
-        for path in self.temp_path_comp.values():
+        for path in list(self.temp_path_comp.values()):
             with scape.utils.file.zip_open(path) as rfp:
                 data = rfp.read()
-            self.assertEquals(data,test_content())
+            self.assertEqual(data,test_content())
 
 
 if __name__=='__main__':

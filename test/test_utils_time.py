@@ -39,25 +39,25 @@ class TestDtFloor(TestCase):
         self.now_str = '2014-01-02 03:04:05.000006'
 
     def test_dt_str(self):
-        self.assertEquals(dtfloor('2014-01-02 03:04:05',datetime.timedelta(hours=1)),
+        self.assertEqual(dtfloor('2014-01-02 03:04:05',datetime.timedelta(hours=1)),
                           datetime.datetime(2014,1,2,3))
     def test_delta_str(self):
-        self.assertEquals(dtfloor(self.now,'1s'),
+        self.assertEqual(dtfloor(self.now,'1s'),
                           datetime.datetime(2014,1,2,3,4,5))
     def test_both_str(self):
-        self.assertEquals(dtfloor('2014-01-02 03:04:05','1h'),
+        self.assertEqual(dtfloor('2014-01-02 03:04:05','1h'),
                           datetime.datetime(2014,1,2,3))
         
     def test_second(self):
-        self.assertEquals(dtfloor(self.now,'1s'),datetime.datetime(2014,1,2,3,4,5))
+        self.assertEqual(dtfloor(self.now,'1s'),datetime.datetime(2014,1,2,3,4,5))
     def test_minute(self):
-        self.assertEquals(dtfloor(self.now,'1m'),datetime.datetime(2014,1,2,3,4))
+        self.assertEqual(dtfloor(self.now,'1m'),datetime.datetime(2014,1,2,3,4))
     def test_hour(self):
-        self.assertEquals(dtfloor(self.now,'1h'),datetime.datetime(2014,1,2,3))
+        self.assertEqual(dtfloor(self.now,'1h'),datetime.datetime(2014,1,2,3))
     def test_day(self):
-        self.assertEquals(dtfloor(self.now,'1d'),datetime.datetime(2014,1,2))
+        self.assertEqual(dtfloor(self.now,'1d'),datetime.datetime(2014,1,2))
     def test_week(self):
-        self.assertEquals(dtfloor(self.now,'1w'),datetime.datetime(2013,12,29))
+        self.assertEqual(dtfloor(self.now,'1w'),datetime.datetime(2013,12,29))
         
 class TestDtCeil(TestCase):
     def setUp(self):
@@ -65,25 +65,25 @@ class TestDtCeil(TestCase):
         self.now_str = '2014-01-02 03:04:05.000006'
 
     def test_dt_str(self):
-        self.assertEquals(dtceil('2014-01-02 03:04:05',datetime.timedelta(hours=1)),
+        self.assertEqual(dtceil('2014-01-02 03:04:05',datetime.timedelta(hours=1)),
                           datetime.datetime(2014,1,2,4))
     def test_delta_str(self):
-        self.assertEquals(dtceil(self.now,'1s'),
+        self.assertEqual(dtceil(self.now,'1s'),
                           datetime.datetime(2014,1,2,3,4,6))
     def test_both_str(self):
-        self.assertEquals(dtceil('2014-01-02 03:04:05','1h'),
+        self.assertEqual(dtceil('2014-01-02 03:04:05','1h'),
                           datetime.datetime(2014,1,2,4))
         
     def test_second(self):
-        self.assertEquals(dtceil(self.now,'1s'),datetime.datetime(2014,1,2,3,4,6))
+        self.assertEqual(dtceil(self.now,'1s'),datetime.datetime(2014,1,2,3,4,6))
     def test_minute(self):
-        self.assertEquals(dtceil(self.now,'1m'),datetime.datetime(2014,1,2,3,5))
+        self.assertEqual(dtceil(self.now,'1m'),datetime.datetime(2014,1,2,3,5))
     def test_hour(self):
-        self.assertEquals(dtceil(self.now,'1h'),datetime.datetime(2014,1,2,4))
+        self.assertEqual(dtceil(self.now,'1h'),datetime.datetime(2014,1,2,4))
     def test_day(self):
-        self.assertEquals(dtceil(self.now,'1d'),datetime.datetime(2014,1,3))
+        self.assertEqual(dtceil(self.now,'1d'),datetime.datetime(2014,1,3))
     def test_week(self):
-        self.assertEquals(dtceil(self.now,'1w'),datetime.datetime(2014,1,5))
+        self.assertEqual(dtceil(self.now,'1w'),datetime.datetime(2014,1,5))
 
 class TestDatetimeRange(TestCase):
     maxDiff = 2000
@@ -123,32 +123,32 @@ class TestDatetimeRange(TestCase):
             self.start, self.end, self.delta
         ))
         for i,(start,end) in enumerate(ranges):
-            self.assertEquals(start,self.correct[i][0])
-            self.assertEquals(end,self.correct[i][1])
+            self.assertEqual(start,self.correct[i][0])
+            self.assertEqual(end,self.correct[i][1])
 
     def test_datetime_range_ts(self):
         ranges = list(utime.datetime_range(
             self.start_ts, self.end_ts, self.delta_ts
         ))
         for i,(start,end) in enumerate(ranges):
-            self.assertEquals(start,self.correct[i][0])
-            self.assertEquals(end,self.correct[i][1])
+            self.assertEqual(start,self.correct[i][0])
+            self.assertEqual(end,self.correct[i][1])
 
     def test_datetime_range_exact(self):
         ranges = list(utime.datetime_range(
             self.start, self.end, self.delta, exact=True,
         ))
         for i,(start,end) in enumerate(ranges):
-            self.assertEquals(start,self.correct_exact[i][0])
-            self.assertEquals(end,self.correct_exact[i][1])
+            self.assertEqual(start,self.correct_exact[i][0])
+            self.assertEqual(end,self.correct_exact[i][1])
 
     def test_datetime_range_ts(self):
         ranges = list(utime.datetime_range(
             self.start_ts, self.end_ts, self.delta_ts, exact=True
         ))
         for i,(start,end) in enumerate(ranges):
-            self.assertEquals(start,self.correct_exact[i][0])
-            self.assertEquals(end,self.correct_exact[i][1])
+            self.assertEqual(start,self.correct_exact[i][0])
+            self.assertEqual(end,self.correct_exact[i][1])
 
 class TestIsNextFuncs(TestCase):
     def test_is_next_hour(self):
@@ -171,7 +171,7 @@ class TestIsNextFuncs(TestCase):
         ))
     def test_is_next_month(self):
         self.assertTrue(is_next_month(
-            datetime.datetime(2014,5,01,),
+            datetime.datetime(2014,5,0o1,),
             datetime.datetime(2014,6,30,23,59),
         ))
         self.assertFalse(is_next_month(
@@ -190,7 +190,7 @@ class TestIsNextFuncs(TestCase):
 
 class TestRdtToSecs(TestCase):
     def test_rd_to_secs(self):
-        self.assertEquals(
+        self.assertEqual(
             rdt_to_secs(datetime.datetime(2014,1,1),
                         rdelta(minutes=1)),
             60,
@@ -208,7 +208,7 @@ class TestTimestampBucketsOfMaxSize(TestCase):
                    '2014051102',
                    '201405110300', '201405110301', '201405110302',
                    '201405110303', '201405110304', '201405110305']
-        self.assertEquals(
+        self.assertEqual(
             timestamp_buckets_of_max_size(start,end),
             correct,
         )
@@ -229,7 +229,7 @@ class TestTimestampBucketsOfSize(TestCase):
         start = '2014-05-10 13:57'
         end = '10d'
         size = 'day'
-        self.assertEquals(
+        self.assertEqual(
             timestamp_buckets_of_size(start,end,size),
             correct,
         )
@@ -250,7 +250,7 @@ class TestDatetimeBucketsOfSize(TestCase):
         start = '2014-05-10 13:57'
         end = '10d'
         size = 'day'
-        self.assertEquals(
+        self.assertEqual(
             datetime_buckets_of_size(start,end,size),
             correct,
         )

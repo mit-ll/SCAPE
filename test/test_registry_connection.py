@@ -48,7 +48,7 @@ if ACQUA:
             self.assertTrue(bool(self.connection.acqua.database))
 
         def test_db_class(self):
-            self.assertEquals(
+            self.assertEqual(
                 self.connection.acqua.configuration.get('databaseClass'),
                 'edu.mit.ll.acqua.database.mock.MockDatabase'
             )

@@ -24,11 +24,11 @@ class TestPort2Service(TestCase):
     def test_p2s(self):
         p2s = services.Port2Service()
 
-        self.assertEquals(p2s[22],('ssh',))
-        self.assertEquals(p2s['22'],('ssh',))
+        self.assertEqual(p2s[22],('ssh',))
+        self.assertEqual(p2s['22'],('ssh',))
 
         names = p2s[22]
-        self.assertEquals(
+        self.assertEqual(
             names[0].protocols,
             {'sctp': ['SSH'],
              'tcp': ['The Secure Shell (SSH) Protocol'],
@@ -37,7 +37,7 @@ class TestPort2Service(TestCase):
 
         p2s = services.Port2Service(simplified=False)
 
-        self.assertEquals(
+        self.assertEqual(
             p2s[22],
             [('ssh', 'The Secure Shell (SSH) Protocol', 'tcp'),
              ('ssh', 'The Secure Shell (SSH) Protocol', 'udp'),
