@@ -22,6 +22,7 @@ Utilities for dealing with CSV files
 
 import sys
 import csv
+import io
 from datetime import datetime
 
 from scape.utils.file import zip_open
@@ -84,7 +85,7 @@ def csv_reader(path,columns=None,header=True,**kw):
 
     '''
     if isinstance(path,str):
-        with zip_open(path,'rbU') as rfp:
+        with zip_open(path,'r') as rfp:
             for i,row in _csv_reader(rfp,columns,header,**kw):
                 yield i,row
 
@@ -101,4 +102,4 @@ def csv_rows(path,columns=None,header=True,**kw):
     for _,row in csv_reader(path,columns,header,**kw):
         yield row
 
-
+read_csv = csv_rows
