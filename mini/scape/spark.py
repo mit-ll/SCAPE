@@ -4,8 +4,6 @@ import pyspark
 from types import MethodType
 
 from scape.registry import DataSource
-import scape.functions
-from scape.functions import tagsdim
 
 def datasource(readerf, metadata):
     """Create a data source from a Spark DataFrame or a function returning a DataFrame"""
@@ -16,13 +14,13 @@ def datasource(readerf, metadata):
         return _SparkDataFrameDataSource(lambda: readerf, md)
 
 class _SparkDataFrameDataSource(DataSource):
-    def __init__(self, readerf, registry):
+    def __init__(self, readerf, metadata):
         self._readerf = readerf
-        self._registry = registry
+        self._metadata = metadata
     
     def connect(self):
         newdf = self._readerf()
-        setattr(newdf, '__scape_metadata', self._registry)
+        setattr(newdf, '__scape_metadata', self._metadata)
         return newdf
 
 def __or_filtered(df, dsmd, td, value):

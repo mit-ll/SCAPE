@@ -34,7 +34,7 @@ _pandas_op_dict = {
 class _PandasDataFrameDataSource(DataSource):
     def __init__(self, readerf,  metadata):
         self._readerf = readerf
-        super().__init__(metadata, _pandas_op_dict)
+        super(_PandasDataFrameDataSource, self).__init__(metadata, _pandas_op_dict)
 
     def connect(self):
         if hasattr(self, '__dataframe'):

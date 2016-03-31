@@ -28,6 +28,12 @@ class TagsDim(object):
         """ The dimension or None"""
         return self._dim
 
+    def __eq__(self, other):
+        return type(self) == type(other) and (self.tags == other.tags) and (self.dim == other.dim)
+
+    def __hash__(self):
+        return hash((self.dim, self.tags))
+
 def td(dim=None, *tags):
     tags = [tag(t) for t in tags] if tags else []
     return TagsDim(tags, _dim(dim))
@@ -66,6 +72,12 @@ class Field(object):
     def name(self):
         """ The name of the field """
         return self._name
+
+    def __eq__(self,other):
+        return type(self)==type(other) and self.name==other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
 def _field_or_tagsdim(x):
     if isinstance(x,str):
@@ -272,30 +284,47 @@ class GenericBinaryCondition(BinaryCondition):
     Instances of BinaryCondition are created by the parsing condition 
     strings. The data source converts these to more specific conditions"""
     def __init__(self, lhs, op, rhs):
-        super().__init__(lhs, rhs)
+        super(GenericBinaryCondition, self).__init__(lhs, rhs)
         self._op = op
         
     @property
     def op(self):
         return self._op
 
+    def __repr__(self):
+        return "{} {} {}".format(repr(self.lhs), repr(self.op), repr(self.rhs))
+    
+    def __eq__(self,other):
+        return type(self)==type(other) and self.op == other.op and self.lhs==other.lhs and self.rhs==other.rhs
+
+
 class Equals(BinaryCondition):
     def __init__(self, lhs, value):
-        super().__init__(lhs,value)
+        super(Equals, self).__init__(lhs,value)
 
     def __repr__(self):
         return "{} == {}".format(repr(self.lhs), repr(self.rhs))
 
+    def __eq__(self,other):
+        return type(self)==type(other) and self.lhs==other.lhs and self.value==other.value
+
+class MatchesCond(BinaryCondition):
+    def __init__(self, lhs, value):
+        super(MatchesCond, self).__init__(lhs,value)
+
+    def __repr__(self):
+        return "{} =~ {}".format(repr(self.lhs), repr(self.rhs))
+
 class GreaterThan(BinaryCondition):
     def __init__(self, lhs, value):
-        super().__init__(lhs,value)
+        super(GreaterThan, self).__init__(lhs,value)
 
     def __repr__(self):
         return "{} > {}".format(repr(self.lhs), repr(self.rhs))
 
 class GreaterThanEqualTo(BinaryCondition):
     def __init__(self, lhs, value):
-        super().__init__(lhs,value)
+        super(GreaterThanEqualTo, self).__init__(lhs,value)
 
     def __repr__(self):
         return "{} >= {}".format(repr(self.lhs), repr(self.rhs))
@@ -356,12 +385,7 @@ class Select(object):
 #    def tagsdim_equals(self, field, value):
 
     def run(self):
-        self._data_source.check_query(self)
-#        print(self._data_source)
-#        print(self._fields_or_tagsdim)
-#        print(self._condition)
-        cond = self._data_source._rewrite(self._condition)
-        return self._data_source.run(cond)
+        return self._data_source.run(self)
 
 
 class DataSource(object):
@@ -397,7 +421,12 @@ class DataSource(object):
         """Perform data source specific checks on the query"""
         pass
 
-    def run(self, query):
+    def run(self, select):
+        self.check_query(self)
+#        print(self._data_source)
+#        print(self._fields_or_tagsdim)
+#        print(self._condition)
+#        cond = self._rewrite(self._condition)
         raise ValueError("Implement in subclass")
 
     def select(self, fields_or_tagsdim='*'):
@@ -469,7 +498,6 @@ from pyparsing import srange, nums, quotedString, Combine, Word, LineStart, Line
 def _rhs_p():
     Ipv4Address = Combine(Word(nums) + ('.'+Word(nums))*3).setResultsName('ipv4')
     Ipv4Address = Ipv4Address.setParseAction(lambda s,l,toks:toks[0])
-    Ipv4Address = Ipv4Address.leaveWhitespace()
 
     Int = Word(nums).setResultsName('int')
     Int = Int.setParseAction(lambda s,l,toks:int(toks[0]))
@@ -483,7 +511,7 @@ def _rhs_p():
     return rhs
 
 def _tagdim_field_p():
-    td = Word(srange('[a-zA-Z:]')).setResultsName('tagsdim')
+    td = Word(srange('[-_a-zA-Z0-9:]')).setResultsName('tagsdim')
     f = Combine('@' + Word(srange('[a-zA-Z]+'))).setResultsName('field')
     parser = (f | td).setParseAction(lambda s,l,toks: _field_or_tagsdim(toks[0]))
     return parser
