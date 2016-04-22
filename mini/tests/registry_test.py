@@ -37,6 +37,19 @@ def test_parse_tagdim_eq_num():
 def test_parse_tags_eq_num():
     r._parse_binary_condition("tag1:tag2 == 23")
 
+def test_parse_tagdim_field_list_fields1():
+    def f(x):
+        res = r._parse_list_fieldselectors(x)
+#        print(x,res,type(res))
+        return res
+    assert f("*")==[]
+    assert f("")==[]
+    assert f("@F")==[Field('F')]
+    assert f("@F,@G")==[Field('F'),Field('G')]
+    assert f(":dim")==[tagsdim("dim")]
+    assert f("tag:,:dim")==[tagsdim('tag:'),tagsdim("dim")]
+    
+
 
 weblog_metadata = TableMetadata({
     'clientip' : tagsdim('client:ip'),
