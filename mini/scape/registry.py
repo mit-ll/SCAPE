@@ -1,5 +1,7 @@
 import copy
 import re
+import json
+from six import string_types # python pos
 
 class TagsDim(object):
     """ A field selector containing any number of tags and an optional dimension.
@@ -34,6 +36,18 @@ class TagsDim(object):
     def __hash__(self):
         return hash((self.dim, self.tags))
 
+    def to_dict(self):
+        return { 'tags' : [t.name for t in self.tags], 'dim' : self.dim }
+
+    def _as_trs(self):
+        r = ['<td>']
+        if self._dim:
+            r.append(self._dim._repr_html_())
+        r.append('</td><td>')
+        r.append("".join([t._repr_html_() for t in self._tags]))
+        r.append('</td>')
+        return r
+    
 def td(dim=None, *tags):
     tags = [tag(t) for t in tags] if tags else []
     return TagsDim(tags, _dim(dim))
@@ -97,12 +111,15 @@ def _field_or_tagsdim(x):
 class Dim(object):
     """ """
     def __init__(self,d):
-        if not isinstance(d,str):
+        if not isinstance(d,string_types):
             raise ValueError("Expecting a string, not " + str(d))
         self._dim = d
 
     def __repr__(self):
         return "Dim(" + self._dim + ")"
+
+    def _repr_html_(self):
+        return self._dim
 
     def __eq__(self, other):
         return isinstance(other, Dim) and self._dim == other._dim
@@ -127,18 +144,25 @@ def _dim(d):
 class Tag(object):
     """  """
     def __init__(self, t):
-        if not isinstance(t,str):
-                raise ValueError("Expecting a string, not " + str(t))
+        if not isinstance(t,string_types):
+                raise ValueError("Expecting a string, not " + str(t) + " " + str(type(t)))
         self._tag = t
 
     def __repr__(self):
         return "Tag('" + self._tag + "')"
+
+    def _repr_html_(self):
+        return self._tag
 
     def __eq__(self, other):
         return isinstance(other, Tag) and self._tag == other._tag
 
     def __hash__(self):
         return hash(self._tag)
+
+    @property
+    def name(self):
+        return self._tag
 
 def tag(t):
     return t if isinstance(t,Tag) else Tag(t)
@@ -152,7 +176,17 @@ class Registry(object):
 
     def data_source(self,name):
         return self._data_sources[name]
+
+    def data_sources(self):
+        return self._data_sources.values()
     
+    def __getitem__(self,name):
+        return self._data_sources[name]
+
+    def items(self):
+        return self._data_sources.items()
+
+        
 
 class TableMetadata(object):
     """ TableMetadata provides logic to map tag/dimension selectors to sets of fields. """
@@ -177,6 +211,18 @@ class TableMetadata(object):
         """
         self._map = dict(self._from_map(m))
 
+    def _repr_html_(self):
+        res = ['<table>']
+        for k in sorted(self._map.keys()):
+            res.append('<tr>')
+            res.append('<td>')
+            res.append(k)
+            res.append('</td>')
+            res.extend(self._map[k]._as_trs())
+            res.append('</tr>')
+        res.append('</table>')
+        return "".join(res)
+
     def _tagsdim_subset(self,x,y):
         """ Return if the TagsDim `x` is compatible with `y`  
         
@@ -194,19 +240,27 @@ class TableMetadata(object):
             return False
         metadata_td = self._map[field.name]
         return self._tagsdim_subset(tagsdim, metadata_td)
-        
-    def fields_matching(self,tagsdim):
-        """Get the list of all fields matching `tagsdim`.
-        """
-        return [Field(f) for f,ftd in self._map.items() if self.tagsdim_matches(tagsdim,Field(f))]
-    
+
+#    def fields_matching(self,tagsdim):
+#        """Get the list of all fields matching `tagsdim`.
+#        """
+#        return [Field(f) for f,ftd in self._map.items() if self.tagsdim_matches(tagsdim,Field(f))]
+
+    def fields_matching(self,selector):
+        if isinstance(selector,Field):
+            return [Field(selector.name)] if selector.name in self._map else []
+        elif isinstance(selector,TagsDim):
+            return [Field(f) for f,ftd in self._map.items() if self.tagsdim_matches(selector,Field(f))]
+        else:
+            raise ValueError("Expecting field or tagsdim")
+
     def has_field(self,f):
         return f.name in self._map
 
     @property
     def fields(self):
-        """ Get an iterator of field """
-        return ((Field(f) for f in self._map.keys()))
+        """ Get the collection fields """
+        return [Field(f) for f in self._map.keys()]
 
     @property
     def field_names(self):
@@ -214,6 +268,10 @@ class TableMetadata(object):
 
     def __repr__(self):
         return str(self._map)
+
+    def save_to_file(self, filename):
+        with open(filename, 'wt') as fp:
+            json.dump({f:self._map[f].to_dict() for f in self.field_names}, fp, sort_keys=True, indent=4)
 
 def _create_table_field_tagsdim_map(m):
     if isinstance(m, TableMetadata):
@@ -357,26 +415,41 @@ def _or_condition(xs):
 
 
 class Select(object):
-    def __init__(self, data_source, fields_or_tagsdim='*', condition=And([])):
+    def __init__(self, data_source, fields=[], condition=And([]), **kwargs):
+        """From a data_source select [fields] from rows mathcing the given condition"""        
         self._data_source = data_source
-        self._fields_or_tagsdim = fields_or_tagsdim
         self._condition = condition
-        pass
+        self._fields = fields
+        for k,v in kwargs.items():
+            setattr(self, k, v)
 
     def __repr__(self):
-        return "Select({}, {}, {})".format(self._data_source, self._fields_or_tagsdim, self._condition)
+        return "Select({}, {}, {})".format(self._data_source, self.fields, self._condition)
 
+    def _copy(self):
+        c = Select(self._data_source, self._fields, copy.copy(self._condition))
+#        c.__dict__ = copy.deepcopy(self.__dict__)
+        for k,v in self.__dict__.items():
+            c.__dict__[k] = v
+        return c
+    
     def where(self,x=None):
-        conds = copy.copy(self._condition)
+        res = self._copy()
         if isinstance(x,str):
             newcond = _parse_binary_condition(x)
         elif isinstance(x, Condition):
             newcond = x
         else:
             raise ValueError("Expecting string or Condition, not {}".format(x))
-        self._data_source.check_query(newcond)
 
-        return Select(self._data_source, self._fields_or_tagsdim, And([newcond, conds]))
+        res._condition = And([newcond, res._condition])
+        self._data_source.check_query(self)
+        return res
+
+    def fields(self,_fields):
+        res = self._copy()
+        res._fields = _parse_list_fieldselectors(_fields)
+        return res
 
     def check(self):
         return self._data_source.check_select(self)
@@ -385,13 +458,17 @@ class Select(object):
 #    def tagsdim_equals(self, field, value):
 
     def run(self):
+        """ Execute a query.
+
+        Returns a data source specific object containing the results
+        """
         return self._data_source.run(self)
 
 
 class DataSource(object):
-    def __dir__(self):
-        print('__dir__')
-        return dir(type(self)) + list(self.__dict__) + list(self._metadata.field_names)
+#    def __dir__(self):
+#        print('__dir__')
+#        return dir(type(self)) + list(self.__dict__) + list(self._metadata.field_names)
 
     def __init__(self, metadata, op_dict):
         """
@@ -414,6 +491,9 @@ class DataSource(object):
     def __repr__(self):
         return "DataSource({})".format(repr(self.name))
 
+    def _repr_html_(self):
+        return self._metadata._repr_html_()
+
     def check_select(self, select):
         pass
 
@@ -429,8 +509,9 @@ class DataSource(object):
 #        cond = self._rewrite(self._condition)
         raise ValueError("Implement in subclass")
 
-    def select(self, fields_or_tagsdim='*'):
-        return Select(self, fields_or_tagsdim)
+    def select(self, fields='*', **kwargs):
+        fields = _parse_list_fieldselectors(fields)
+        return Select(self, fields, **kwargs)
 
     def _rewrite_generic_binary_condition(self,cond):
         """Replace generic binary conditions by data source specific binary conditions"""
@@ -447,7 +528,6 @@ class DataSource(object):
     def _rewrite_tagsdim(self,cond):
         """Replace tagsdim with fields"""
         def rewrite(obj):
-            print(obj)
             if not obj:
                 raise ValueError("Illegal Arg")
             if isinstance(obj,GenericBinaryCondition) and isinstance(obj.lhs, TagsDim):
@@ -461,6 +541,7 @@ class DataSource(object):
         return res
 
     def _rewrite_outer_and(self,cond):
+        """Unnest ands. For example And(And(x,y),And(z)) -> And(x,y,z)"""
         def walk(obj):
             if isinstance(obj, And):
                 for x in obj.xs:
@@ -483,7 +564,7 @@ class DataSource(object):
         res = self._rewrite_generic_binary_condition(res)
         res = self._rewrite_outer_and(res)
         self._check_fields(cond)
-        print(res)
+#        print(res)
 #        return self._rewrite_outer_and(self._rewrite_generic_binary_condition(self._rewrite_tagsdim(cond)))
 #        return self._rewrite_generic_binary_condition()
         return res
@@ -493,7 +574,7 @@ class DataSource(object):
 # Parsing
 ################################################################################
 import pyparsing
-from pyparsing import srange, nums, quotedString, Combine, Word, LineStart, LineEnd
+from pyparsing import srange, nums, quotedString, delimitedList, Combine, Word, LineStart, LineEnd, Optional, Literal
 
 def _rhs_p():
     Ipv4Address = Combine(Word(nums) + ('.'+Word(nums))*3).setResultsName('ipv4')
@@ -512,9 +593,16 @@ def _rhs_p():
 
 def _tagdim_field_p():
     td = Word(srange('[-_a-zA-Z0-9:]')).setResultsName('tagsdim')
-    f = Combine('@' + Word(srange('[a-zA-Z]+'))).setResultsName('field')
+    f = Combine('@' + Word(srange('[_a-zA-Z]+'))).setResultsName('field')
     parser = (f | td).setParseAction(lambda s,l,toks: _field_or_tagsdim(toks[0]))
     return parser
+
+def _list_tagdim_field_p():
+    def p(s,l,toks):
+        return toks[0]
+    star = Literal('*').setResultsName('star').setParseAction(p)
+    optTds = Optional(delimitedList(_tagdim_field_p())).setParseAction(lambda s,l,toks: toks)
+    return star |  optTds
 
 def _binary_condition_p():
     lhs = _tagdim_field_p().setResultsName('lhs')
@@ -525,6 +613,12 @@ def _binary_condition_p():
 
     line.setParseAction(lambda s,l,toks: GenericBinaryCondition(toks[0], toks[1], toks[2]))
     return line
+
+def _parse_list_fieldselectors(x):
+    r = _list_tagdim_field_p().parseString(x).asList()
+    if len(r)>=1 and r[0]=='*':
+        r = []
+    return r
 
 def _parse_binary_condition(x):
     return _binary_condition_p().parseString(x)[0]
