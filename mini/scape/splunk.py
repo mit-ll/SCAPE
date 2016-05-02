@@ -5,12 +5,12 @@ import splunklib.results as results
 import json
 import scape.registry as reg
 
-def load_splunk_registry(service,json_filename):
+def load_splunk_registry(service, json_filename):
       with open(json_filename, 'rt') as fp:
           js = json.load(fp)
           def ds(index):
               return SplunkDataSource(service, reg.TableMetadata(js[index]), index)
-          d = {index:ds(index) for index,fields in js.items()}
+          d = {index:ds(index) for index, fields in js.items()}
           return reg.Registry(d)
 
 def _extra_fields(table_meta, field_counts):
@@ -19,8 +19,8 @@ def _extra_fields(table_meta, field_counts):
 
 def _missing_fields(table_meta, field_counts, ignore=[]):
     fields = set(table_meta.field_names)
-    return {f:{'tags':[],'dim':None} for f in field_counts.keys() if f not in fields and f not in ignore}
-
+    return {f:{'tags':[], 'dim':None} for f in field_counts.keys()
+            if f not in fields and f not in ignore}
 
 class SplunkDataSource(reg.DataSource):
     def __init__(self, splunk_service, metadata, index):
@@ -32,7 +32,7 @@ class SplunkDataSource(reg.DataSource):
         self._index = index
         self._name = index
 
-    def _get_splunk_params(self,select):
+    def _get_splunk_params(self, select):
         attrs = ['earliest', 'earliest_time',
                  'index_earliest', 'index_latest',
                  'latest', 'latest_time',
@@ -46,9 +46,9 @@ class SplunkDataSource(reg.DataSource):
         return kwargs
 
     def debug(self, select):
-        print("splunk_params=",self._get_splunk_params(select))
-        print("condition=",select._condition)
-        print("select_fields=",select._fields)
+        print("splunk_params=", self._get_splunk_params(select))
+        print("condition=", select._condition)
+        print("select_fields=", select._fields)
         cond = self._rewrite(select._condition)
         search_query = _go(cond)
         if select._fields:
@@ -60,9 +60,9 @@ class SplunkDataSource(reg.DataSource):
             fields = "| fields " + ", ".join(fs)
         else:
             fields = ""
-        
+
         query = "search index={} {} {}".format(self._index, search_query, fields)
-        print("splunk query=[",query, "]")
+        print("splunk query=[", query, "]")
 
     def check_select(self, select):
         self.debug(select)
@@ -101,7 +101,7 @@ def get_splunk_fields(service, index, max=30000, inclusion_percent=0.01):
     return {f['field']:f['count'] for f in xs}
 
 class SplunkResults():
-    def __init__(self,job):
+    def __init__(self, job):
         self._job = job
 
     def is_done(self):
@@ -109,7 +109,7 @@ class SplunkResults():
         while not job.is_ready():
             pass
         return self._job['isDone']=='1'
-        
+
     def print_progress(self):
         job = self._job
         done = self.is_done()
@@ -126,7 +126,7 @@ class SplunkResults():
         print(status)
         return done
 
-    def get_progress(self,verbose):
+    def get_progress(self, verbose):
         done = self.is_done()
         if verbose:
             return self.print_progress()
@@ -150,16 +150,16 @@ class SplunkResults():
 
     def cancel(self):
         self._job.cancel()
-        
+
 
 def _splunk_jobs(service, query, **kwargs):
     job = service.jobs.create(query, **kwargs)
-    
+
 def synchronous_get(service, query, **kwargs):
     job = service.jobs.create(query, **kwargs)
-    print("query=",query, "kwargs=", kwargs)
+    print("query=", query, "kwargs=", kwargs)
     while not job.is_done():
-        print('.',end='')
+        print('.', end='')
         sleep(2)
     rr = results.ResultsReader(job.results(count=0))
 
