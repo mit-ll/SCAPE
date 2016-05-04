@@ -217,6 +217,7 @@ class TableMetadata(object):
 
     def _repr_html_(self):
         res = ['<table>']
+        res.append('<tr><td>Field</td><td>Dim</td><td>Tags</td></tr>')
         for k in sorted(self._map.keys()):
             res.append('<tr>')
             res.append('<td>')
