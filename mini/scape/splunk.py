@@ -45,23 +45,25 @@ class SplunkDataSource(reg.DataSource):
                 kwargs[o] = getattr(select, o)
         return kwargs
 
-    def debug(self, select):
-        print("splunk_params=", self._get_splunk_params(select))
-        print("condition=", select._condition)
-        print("select_fields=", select._fields)
-        cond = self._rewrite(select._condition)
-        search_query = _go(cond)
+    def _fields_pipe(self, select):
         if select._fields:
             fs = set()
             for selector in select._fields:
                 xs = [f.name for f in self._metadata.fields_matching(selector)]
-                print(xs)
                 fs = fs.union(set(xs))
             fields = "| fields " + ", ".join(fs)
         else:
             fields = ""
+        return fields
 
+    def debug(self, select):
+        cond = self._rewrite(select._condition)
+        search_query = _go(cond)
+        fields = self._fields_pipe(select)
         query = "search index={} {} {}".format(self._index, search_query, fields)
+        print("splunk_params=", self._get_splunk_params(select))
+        print("condition=", select._condition)
+        print("select_fields=", select._fields)
         print("splunk query=[", query, "]")
 
     def check_select(self, select):
@@ -71,10 +73,9 @@ class SplunkDataSource(reg.DataSource):
         self.check_query(select._condition)
         cond = self._rewrite(select._condition)
         search_query = _go(cond)
-        query = "search index={} {}".format(self._index, search_query)
+        fields = self._fields_pipe(select)
+        query = "search index={} {} {}".format(self._index, search_query, fields)
         kwargs = self._get_splunk_params(select)
-#        print(query)
-#        print(kwargs)
         job = self._service.jobs.create(query, **kwargs)
         return SplunkResults(job)
 
