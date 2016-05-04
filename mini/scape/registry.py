@@ -628,7 +628,7 @@ def _binary_condition_p():
     return line
 
 def _parse_list_fieldselectors(x):
-    r = _list_tagdim_field_p().parseString(x).asList()
+    r = _list_tagdim_field_p().parseString(x, parseAll=True).asList()
     if len(r) >= 1 and r[0] == '*':
         r = []
     return r
