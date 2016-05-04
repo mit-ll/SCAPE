@@ -8,9 +8,11 @@ import scape.registry as reg
 def load_splunk_registry(service, json_filename):
       with open(json_filename, 'rt') as fp:
           js = json.load(fp)
-          def ds(index):
-              return SplunkDataSource(service, reg.TableMetadata(js[index]), index)
-          d = {index:ds(index) for index, fields in js.items()}
+          def datasource(index,ds):
+              description = ds['description'] if 'description' in ds else ""
+              metadata = reg.TableMetadata(ds['fields'])
+              return SplunkDataSource(service, metadata, description, index)
+          d = {index:datasource(index,ds) for index, ds in js.items()}
           return reg.Registry(d)
 
 def _extra_fields(table_meta, field_counts):
@@ -23,8 +25,8 @@ def _missing_fields(table_meta, field_counts, ignore=[]):
             if f not in fields and f not in ignore}
 
 class SplunkDataSource(reg.DataSource):
-    def __init__(self, splunk_service, metadata, index):
-        super(SplunkDataSource, self).__init__(metadata, {
+    def __init__(self, splunk_service, metadata, description, index):
+        super(SplunkDataSource, self).__init__(metadata, description, {
             '==': reg.Equals,
             '=~':  reg.MatchesCond
         })

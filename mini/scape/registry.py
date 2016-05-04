@@ -482,18 +482,23 @@ class DataSource(object):
 #        print('__dir__')
 #        return dir(type(self)) + list(self.__dict__) + list(self._metadata.field_names)
 
-    def __init__(self, metadata, op_dict):
+    def __init__(self, metadata, description, op_dict):
         """
         Args:
           metadata: Table metadata
           op_dict: Dictionary from infix operator name to Condition
         """
+        self._description = description if description else ""
         self._metadata = metadata
         self._op_dict = op_dict
 
     @property
     def name(self):
         return getattr(self, '_name') if hasattr(self, '_name') else "Unknown"
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def metadata(self):
