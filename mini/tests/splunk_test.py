@@ -13,7 +13,7 @@ import scape.splunklite as splunk
 service = splunk.Service(
     host='localhost',
     port=8089,
-    user='admin',
+    username='admin',
     password='password1!',
 )
 
