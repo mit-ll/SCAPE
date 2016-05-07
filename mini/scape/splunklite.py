@@ -311,7 +311,7 @@ class Control(HttpTrait):
 
     def action(self, action, **kw):
         response = self.http_post(action=action, **kw)
-        return response.ok()
+        return response.ok
 
     def pause(self):
         ''' Suspends the execution of the current search.'''
@@ -362,3 +362,15 @@ class Control(HttpTrait):
     def unsave(self):
         '''Disables any action performed by save.'''
         self.action('unsave')
+
+
+# class ResultsReader(collections.Iterator):
+#     def __init__(self, results):
+#         pass
+
+#     def __iter__(self):
+#         return self
+
+#     def __next__(self):
+#         pass
+#     next = __next__

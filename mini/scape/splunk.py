@@ -1,17 +1,22 @@
 from __future__ import print_function
 from time import sleep
-import splunklib.client as client
-import splunklib.results as results
 import json
+
+# 
+# BDO edits below to remove splunklib.results requirement
+# 
+# import splunklib.client as client
+# import splunklib.results as results
+
 import scape.registry as reg
 
 def load_splunk_registry(service, json_filename):
-      with open(json_filename, 'rt') as fp:
-          js = json.load(fp)
-          def ds(index):
-              return SplunkDataSource(service, reg.TableMetadata(js[index]), index)
-          d = {index:ds(index) for index, fields in js.items()}
-          return reg.Registry(d)
+    with open(json_filename, 'rt') as fp:
+        js = json.load(fp)
+        def ds(index):
+            return SplunkDataSource(service, reg.TableMetadata(js[index]), index)
+        d = {index:ds(index) for index, fields in js.items()}
+        return reg.Registry(d)
 
 def _extra_fields(table_meta, field_counts):
     fields = set(field_counts.keys())
@@ -138,14 +143,21 @@ class SplunkResults():
             if verbose:
                 self.print_progress()
             sleep(2)
-        rr = results.ResultsReader(self._job.results(count=0))
 
-        for r in rr:
-            if isinstance(r, results.Message):
-                print(" {} {}".format(r.type, r.message))
-            elif isinstance(r, dict):
-                yield r
-    #             print(r)
+        # 
+        # BDO: Didn't implement ResultsReader, couldn't see the point
+        # 
+        # rr = results.ResultsReader(self._job.results(count=0))
+        # for r in rr:
+        #     if isinstance(r, results.Message):
+        #         print(" {} {}".format(r.type, r.message))
+        #     elif isinstance(r, dict):
+        #         yield r
+        #         # print(r)
+
+        for row in self._job.results(count=0):
+              yield row
+              
         self.cancel()
 
     def cancel(self):
@@ -161,15 +173,21 @@ def synchronous_get(service, query, **kwargs):
     while not job.is_done():
         print('.', end='')
         sleep(2)
-    rr = results.ResultsReader(job.results(count=0))
 
-    res = []
-    for r in rr:
-        if isinstance(r, results.Message):
-            print(" {} {}".format(r.type, r.message))
-        elif isinstance(r, dict):
-            res.append(r)
-#             print(r)
+    # 
+    # BDO: Didn't implement ResultsReader, couldn't see the point
+    # 
+    # rr = results.ResultsReader(job.results(count=0))
+    # res = []
+    # for r in rr:
+    #     if isinstance(r, results.Message):
+    #         print(" {} {}".format(r.type, r.message))
+    #     elif isinstance(r, dict):
+    #         res.append(r)
+    #         # print(r)
+
+    res = list(self._job.results(count=0))
+    
     job.cancel()
     return res
 
