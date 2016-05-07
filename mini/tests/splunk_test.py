@@ -1,26 +1,35 @@
 from __future__ import print_function
+import os
 import getpass
 import json
-from time import sleep
-import splunklib.client as client
-import splunklib.results as results
+
+# import splunklib.client as client
+# import splunklib.results as results
+
 import scape.registry as reg
 import scape.splunk as scunk
-import os
+import scape.splunklite as splunk
 
-class FakeJobs(object):
-    def create(self, query, **kwargs):
-        return []
+service = splunk.Service(
+    host='localhost',
+    port=8089,
+    user='admin',
+    password='password1!',
+)
 
-class FakeSplunk(object):
-    @property
-    def jobs(self):
-        return FakeJobs()
-    pass
+# class FakeJobs(object):
+#     def create(self, query, **kwargs):
+#         return []
+
+# class FakeSplunk(object):
+#     @property
+#     def jobs(self):
+#         return FakeJobs()
+#     pass
 
 reg = reg.Registry({
     'addc': scunk.SplunkDataSource(
-        splunk_service=FakeSplunk(),
+        splunk_service=service,
         metadata=reg.TableMetadata({
             'Source_Network_Address': { 'tags' : [ 'source'], 'dim': 'ip' },
             'Source_Port': { 'tags' : [ 'source'], 'dim': 'port' },
