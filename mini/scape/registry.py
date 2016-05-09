@@ -171,24 +171,11 @@ class Tag(object):
 def tag(t):
     return t if isinstance(t, Tag) else Tag(t)
 
-class Registry(object):
+class Registry(dict):
     """ A collection  of data sources. """
 
     def __init__(self, data_sources):
         """A dictionary from data source names to data source."""
-        self._data_sources = data_sources
-
-    def data_source(self, name):
-        return self._data_sources[name]
-
-    def data_sources(self):
-        return self._data_sources.values()
-
-    def __getitem__(self, name):
-        return self._data_sources[name]
-
-    def items(self):
-        return self._data_sources.items()
 
 
 
