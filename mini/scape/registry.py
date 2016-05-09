@@ -466,6 +466,9 @@ class Select(object):
     def check(self):
         return self._data_source.check_select(self)
 
+    def debug(self):
+        return self._data_source.debug_select(self)
+
 #    def field_equals(self, field, value):
 #    def tagsdim_equals(self, field, value):
 
@@ -512,9 +515,6 @@ class DataSource(object):
         return self._metadata._repr_html_()
 
     def check_select(self, select):
-        pass
-
-    def check_query(self, query):
         """Perform data source specific checks on the query"""
         pass
 

@@ -29,6 +29,8 @@ def _missing_fields(table_meta, field_counts, ignore=[]):
     return {f:{'tags':[], 'dim':None} for f in field_counts.keys()
             if f not in fields and f not in ignore}
 
+_omit_fields=['_indextime', '_kv', '_raw','_serial','_sourcetype', '_time']
+
 class SplunkDataSource(reg.DataSource):
     def __init__(self, splunk_service, metadata, description, index):
         super(SplunkDataSource, self).__init__(metadata, description, {
@@ -63,25 +65,33 @@ class SplunkDataSource(reg.DataSource):
             fields = ""
         return fields
 
-    def debug(self, select):
+    def _pipe_omitted_fields(self,select):
+        fs = list(set(_omit_fields) - set(select._fields))
+        return "| fields - " + ", ".join(fs)
+
+    def debug_select(self, select):
+        self.check_select(select, debug=True)
+
+    def check_select(self, select, debug=False):
         cond = self._rewrite(select._condition)
         search_query = _go(cond)
         fields = self._fields_pipe(select)
-        query = "search index={} {} {}".format(self._index, search_query, fields)
-        print("splunk_params=", self._get_splunk_params(select))
-        print("condition=", select._condition)
-        print("select_fields=", select._fields)
-        print("splunk query=[", query, "]")
-
-    def check_select(self, select):
-        self.debug(select)
+        omitted_fields = self._pipe_omitted_fields(select)
+        query = "search index={} {} {} {}".format(self._index, search_query, fields, omitted_fields)
+        if debug:
+            print("splunk_params=", self._get_splunk_params(select))
+            print("condition=", select._condition)
+            print("fields=", select._fields)
+            print("omitted_fields=", omitted_fields)
+            print("splunk query=[", query, "]")
 
     def run(self, select):
-        self.check_query(select._condition)
         cond = self._rewrite(select._condition)
         search_query = _go(cond)
         fields = self._fields_pipe(select)
-        query = "search index={} {} {}".format(self._index, search_query, fields)
+        omitted_fields = self._pipe_omitted_fields(select)
+        query = "search index={} {} {} {}".format(self._index, search_query, fields, omitted_fields)
+
         kwargs = self._get_splunk_params(select)
         job = self._service.jobs.create(query, **kwargs)
         return SplunkResults(job)
