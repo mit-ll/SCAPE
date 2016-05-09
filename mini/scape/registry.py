@@ -435,7 +435,8 @@ class Select(object):
             setattr(self, k, v)
 
     def __repr__(self):
-        return "Select({}, {}, {})".format(self._data_source, self.fields, self._condition)
+        return "Select({!r}, {!r}, {!r})".format(
+            self._data_source, self._fields, self._condition)
 
     def _copy(self):
         c = Select(self._data_source, self._fields, copy.copy(self._condition))
