@@ -1,7 +1,10 @@
 import re
+from nose.tools import *
 
 from scape.registry import *
 import scape.registry as r
+
+import pyparsing
 
 
 def test_parse_dims():
@@ -28,6 +31,18 @@ def test_parse_field_eq_quote():
 def test_parse_field_eq_ip():
     r._parse_binary_condition('@asdf == 2.3.4.5')
 
+# We don't yet support ()'s, ands, ors
+#def test_parse_field_eq_parens():
+#    r._parse_binary_condition('(@asdf == 2.3.4.5)')
+
+@raises(pyparsing.ParseException)
+def test_parse_field_eq_ip_extra_garbage():
+    r._parse_binary_condition('@asdf == 2.3.4.5  ffff')
+
+@raises(pyparsing.ParseException)
+def test_parse_field_eq_unquoted():
+    r._parse_binary_condition("@asdf == asdf")
+
 def test_parse_dim_eq_num():
     r._parse_binary_condition(':dim == 23')
 def test_parse_tag_eq_num():
@@ -49,6 +64,10 @@ def test_parse_tagdim_field_list_fields1():
     assert f(":dim")==[tagsdim("dim")]
     assert f("tag:,:dim")==[tagsdim('tag:'),tagsdim("dim")]
     
+@raises(pyparsing.ParseException)
+def test_bad_fieldselectors():
+    r._parse_list_fieldselectors("@categories == 'General'")
+
 
 
 weblog_metadata = TableMetadata({

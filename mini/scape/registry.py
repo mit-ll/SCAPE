@@ -217,6 +217,7 @@ class TableMetadata(object):
 
     def _repr_html_(self):
         res = ['<table>']
+        res.append('<tr><td>Field</td><td>Dim</td><td>Tags</td></tr>')
         for k in sorted(self._map.keys()):
             res.append('<tr>')
             res.append('<td>')
@@ -482,18 +483,24 @@ class DataSource(object):
 #        print('__dir__')
 #        return dir(type(self)) + list(self.__dict__) + list(self._metadata.field_names)
 
-    def __init__(self, metadata, op_dict):
+    def __init__(self, metadata, description, op_dict):
         """
         Args:
           metadata: Table metadata
+          description: Description
           op_dict: Dictionary from infix operator name to Condition
         """
+        self._description = description if description else ""
         self._metadata = metadata
         self._op_dict = op_dict
 
     @property
     def name(self):
         return getattr(self, '_name') if hasattr(self, '_name') else "Unknown"
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def metadata(self):
@@ -629,7 +636,7 @@ def _binary_condition_p():
     return line
 
 def _parse_list_fieldselectors(x):
-    r = _list_tagdim_field_p().parseString(x).asList()
+    r = _list_tagdim_field_p().parseString(x, parseAll=True).asList()
     if len(r) >= 1 and r[0] == '*':
         r = []
     return r

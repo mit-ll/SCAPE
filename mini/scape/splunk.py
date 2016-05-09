@@ -13,9 +13,11 @@ import scape.registry as reg
 def load_splunk_registry(service, json_filename):
     with open(json_filename, 'rt') as fp:
         js = json.load(fp)
-        def ds(index):
-            return SplunkDataSource(service, reg.TableMetadata(js[index]), index)
-        d = {index:ds(index) for index, fields in js.items()}
+        def datasource(index,ds):
+            description = ds['description'] if 'description' in ds else ""
+            metadata = reg.TableMetadata(ds['fields'])
+            return SplunkDataSource(service, metadata, description, index)
+        d = {index:datasource(index,ds) for index, ds in js.items()}
         return reg.Registry(d)
 
 def _extra_fields(table_meta, field_counts):
@@ -28,8 +30,8 @@ def _missing_fields(table_meta, field_counts, ignore=[]):
             if f not in fields and f not in ignore}
 
 class SplunkDataSource(reg.DataSource):
-    def __init__(self, splunk_service, metadata, index):
-        super(SplunkDataSource, self).__init__(metadata, {
+    def __init__(self, splunk_service, metadata, description, index):
+        super(SplunkDataSource, self).__init__(metadata, description, {
             '==': reg.Equals,
             '=~':  reg.MatchesCond
         })
@@ -50,23 +52,25 @@ class SplunkDataSource(reg.DataSource):
                 kwargs[o] = getattr(select, o)
         return kwargs
 
-    def debug(self, select):
-        print("splunk_params=", self._get_splunk_params(select))
-        print("condition=", select._condition)
-        print("select_fields=", select._fields)
-        cond = self._rewrite(select._condition)
-        search_query = _go(cond)
+    def _fields_pipe(self, select):
         if select._fields:
             fs = set()
             for selector in select._fields:
                 xs = [f.name for f in self._metadata.fields_matching(selector)]
-                print(xs)
                 fs = fs.union(set(xs))
             fields = "| fields " + ", ".join(fs)
         else:
             fields = ""
+        return fields
 
+    def debug(self, select):
+        cond = self._rewrite(select._condition)
+        search_query = _go(cond)
+        fields = self._fields_pipe(select)
         query = "search index={} {} {}".format(self._index, search_query, fields)
+        print("splunk_params=", self._get_splunk_params(select))
+        print("condition=", select._condition)
+        print("select_fields=", select._fields)
         print("splunk query=[", query, "]")
 
     def check_select(self, select):
@@ -76,10 +80,9 @@ class SplunkDataSource(reg.DataSource):
         self.check_query(select._condition)
         cond = self._rewrite(select._condition)
         search_query = _go(cond)
-        query = "search index={} {}".format(self._index, search_query)
+        fields = self._fields_pipe(select)
+        query = "search index={} {} {}".format(self._index, search_query, fields)
         kwargs = self._get_splunk_params(select)
-#        print(query)
-#        print(kwargs)
         job = self._service.jobs.create(query, **kwargs)
         return SplunkResults(job)
 
