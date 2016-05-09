@@ -176,8 +176,22 @@ class Registry(dict):
 
     def __init__(self, data_sources):
         """A dictionary from data source names to data source."""
+        self.update(data_sources)
 
-
+    def _repr_html_(self):
+        res = ['<table>']
+        def td(d):
+            res.extend(['<td>',d,'</td>'])
+        res.append('<tr><td><b>Name</b></td><td><b>Class</b></td><td><b>Description</b></td></tr>')
+        for k in sorted(self.keys()):
+            ds = self[k]
+            res.append('<tr>')
+            td(k)
+            td(ds.__class__.__name__)
+            td(ds.description)
+            res.append('</tr>')
+        res.append('</table>')
+        return "".join(res)
 
 class TableMetadata(object):
     """ TableMetadata provides logic to map tag/dimension selectors to sets of fields. """
@@ -204,12 +218,10 @@ class TableMetadata(object):
 
     def _repr_html_(self):
         res = ['<table>']
-        res.append('<tr><td>Field</td><td>Dim</td><td>Tags</td></tr>')
+        res.append('<tr><td><b>Field</b></td><td><b>Dim</b></td><td><b>Tags</b></td></tr>')
         for k in sorted(self._map.keys()):
             res.append('<tr>')
-            res.append('<td>')
-            res.append(k)
-            res.append('</td>')
+            res.extend(['<td>', k, '</td>'])
             res.extend(self._map[k]._as_trs())
             res.append('</tr>')
         res.append('</table>')
