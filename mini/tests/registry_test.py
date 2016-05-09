@@ -120,7 +120,7 @@ def interpret(cond):
 
 class PythonDataSource(DataSource):
     def __init__(self, metadata, data):
-        super(PythonDataSource, self).__init__(metadata, {
+        super(PythonDataSource, self).__init__(metadata, "description", {
             '==': Equals,
             '=~':  MatchesCond
         })
