@@ -127,7 +127,7 @@ class PythonDataSource(DataSource):
         self._data = data
 
     def run(self, select):
-        self.check_query(select._condition)
+        self.check_select(select)
 #        print(self._fields_or_tagsdim)
 #        print(self._condition)
         cond = self._rewrite(select._condition)
