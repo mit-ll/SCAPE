@@ -1,0 +1,7 @@
+six 
+pyparsing 
+requests
+coverage 
+nose 
+jupyter 
+pandas
