@@ -83,7 +83,7 @@ class Field(object):
         self._name = name
 
     def __repr__(self):
-        return "Field(" + self._name + ")"
+        return "Field(" + repr(self._name) + ")"
 
     @property
     def name(self):
@@ -119,7 +119,7 @@ class Dim(object):
         self._dim = d
 
     def __repr__(self):
-        return "Dim(" + self._dim + ")"
+        return "Dim(" + repr(self._dim) + ")"
 
     def _repr_html_(self):
         return self._dim
@@ -153,7 +153,7 @@ class Tag(object):
         self._tag = t
 
     def __repr__(self):
-        return "Tag('" + self._tag + "')"
+        return "Tag(" + repr(self.name) + ")"
 
     def _repr_html_(self):
         return self._tag
@@ -274,7 +274,7 @@ class TableMetadata(object):
         return self._map.keys()
 
     def __repr__(self):
-        return str(self._map)
+        return repr(self._map)
 
     def save_to_file(self, filename):
         with open(filename, 'wt') as fp:
@@ -303,9 +303,16 @@ class TrueCondition(Condition):
     def __init__(self):
         pass
 
+    def __eq__(self, other):
+        return type(self) == type(other)
+
+
 class And(Condition):
     def __init__(self, xs):
         self.xs = xs
+
+    def __eq__(self, other):
+        return type(self) == type(other) and frozenset(self.xs) == frozenset(other.xs)
 
     def fields(self):
         for c in self.xs:
@@ -314,15 +321,16 @@ class And(Condition):
 
     def map(self, f):
         def g(x):
-            print(x, "------->", f(x))
-            return f(x)
-        return f(And([g(x) for x in self.xs]))
+            res =  f(x)
+#            print(x, "-->", res)
+            return res
+        return g(And([g(x) for x in self.xs]))
 
     def map_leaves(self, f):
         return And([x.map_leaves(f) for x in self.xs])
 
     def __repr__(self):
-        return "And({})".format(str(repr(self.xs)))
+        return "And({!r})".format(self.xs)
 
 class BinaryCondition(Condition):
     def __init__(self, lhs, rhs):
@@ -330,7 +338,10 @@ class BinaryCondition(Condition):
         self._rhs = rhs
 
     def __repr__(self):
-        return "BinaryCondition({},{})".format(self._lhs, self._rhs)
+        return "BinaryCondition({!r},{!r})".format(self._lhs, self._rhs)
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.lhs == other.lhs and self.rhs == other.rhs
 
     @property
     def lhs(self):
@@ -358,7 +369,10 @@ class GenericBinaryCondition(BinaryCondition):
         return self._op
 
     def __repr__(self):
-        return "{} {} {}".format(repr(self.lhs), repr(self.op), repr(self.rhs))
+        return "GenericBinaryCondition({!r},{!r},{!r})".format(self.lhs, self.op, self.rhs)
+
+    def __hash__(self):
+        return hash((self._op, self.lhs, self.rhs)) 
 
     def __eq__(self, other):
         return (type(self) == type(other) and self.op == other.op
@@ -370,7 +384,10 @@ class Equals(BinaryCondition):
         super(Equals, self).__init__(lhs, value)
 
     def __repr__(self):
-        return "{} == {}".format(repr(self.lhs), repr(self.rhs))
+        return "Equals({!r},{!r})".format(self.lhs, self.rhs)
+
+    def __hash__(self):
+        return hash((type(self), self.lhs, self.rhs))
 
     def __eq__(self, other):
         return type(self) == type(other) and self.lhs == other.lhs and self.rhs == other.rhs
@@ -380,25 +397,28 @@ class MatchesCond(BinaryCondition):
         super(MatchesCond, self).__init__(lhs, value)
 
     def __repr__(self):
-        return "{} =~ {}".format(repr(self.lhs), repr(self.rhs))
+        return "MatchesCond({!r}, {!r})".format(self.lhs, self.rhs)
 
 class GreaterThan(BinaryCondition):
     def __init__(self, lhs, value):
         super(GreaterThan, self).__init__(lhs, value)
 
     def __repr__(self):
-        return "{} > {}".format(repr(self.lhs), repr(self.rhs))
+        return "GreaterThan({!r},{!r})".format(self.lhs, self.rhs)
 
 class GreaterThanEqualTo(BinaryCondition):
     def __init__(self, lhs, value):
         super(GreaterThanEqualTo, self).__init__(lhs, value)
 
     def __repr__(self):
-        return "{} >= {}".format(repr(self.lhs), repr(self.rhs))
+        return "GreaterThanEqualTo({!r},{!r})".format(self.lhs, self.rhs)
 
 class Or(Condition):
     def __init__(self, xs):
         self.xs = xs
+
+    def __eq__(self, other):
+        return type(self) == type(other) and frozenset(self.xs) == frozenset(other.xs)
 
     def fields(self):
         for c in self.xs:
@@ -418,7 +438,7 @@ def _or_condition(xs):
     if len(xs) == 1:
         return xs[0]
     elif len(xs) > 1:
-        Or(xs)
+        return Or(xs)
     else:
         raise ValueError("Must have at least one condition in or")
 
@@ -455,7 +475,7 @@ class Select(object):
             raise ValueError("Expecting string or Condition, not {}".format(x))
 
         res._condition = And([newcond, res._condition])
-        self._data_source.check_query(self)
+        self._data_source.check_select(self)
         return res
 
     def fields(self, _fields):
@@ -468,9 +488,6 @@ class Select(object):
 
     def debug(self):
         return self._data_source.debug_select(self)
-
-#    def field_equals(self, field, value):
-#    def tagsdim_equals(self, field, value):
 
     def run(self):
         """ Execute a query.
@@ -518,12 +535,11 @@ class DataSource(object):
         """Perform data source specific checks on the query"""
         pass
 
+    def debug_select(self, select):
+        """Print data source specific debug output for the query"""
+        pass
+
     def run(self, select):
-        self.check_query(self)
-#        print(self._data_source)
-#        print(self._fields_or_tagsdim)
-#        print(self._condition)
-#        cond = self._rewrite(self._condition)
         raise ValueError("Implement in subclass")
 
     def select(self, fields='*', **kwargs):
@@ -545,13 +561,12 @@ class DataSource(object):
     def _rewrite_tagsdim(self, cond):
         """Replace tagsdim with fields"""
         def rewrite(obj):
-            if not obj:
-                raise ValueError("Illegal Arg")
             if isinstance(obj, GenericBinaryCondition) and isinstance(obj.lhs, TagsDim):
                 fields = self._metadata.fields_matching(obj.lhs)
                 if not fields:
                     raise ValueError("No fields matching {}".format(repr(obj.lhs)))
-                return _or_condition([GenericBinaryCondition(f, obj.op, obj.rhs) for f in fields])
+                res = _or_condition([GenericBinaryCondition(f, obj.op, obj.rhs) for f in fields])
+                return res
             else:
                 return obj
         res = cond.map_leaves(rewrite)
@@ -566,7 +581,14 @@ class DataSource(object):
                         yield y
             else:
                 yield obj
-        return And(list(walk(cond)))
+        cs = list(walk(cond))
+        if cs:
+            if len(cs)==1:
+                return cs[0]
+            else:
+                return And(cs)
+        else:
+            return TrueCondition()
 
     def _check_fields(self, cond):
         not_found = []
