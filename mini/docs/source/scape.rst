@@ -36,6 +36,14 @@ scape.spark module
     :undoc-members:
     :show-inheritance:
 
+scape.splunklite module
+------------------
+
+.. automodule:: scape.splunklite
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
