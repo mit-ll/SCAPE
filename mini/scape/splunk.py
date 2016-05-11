@@ -16,7 +16,7 @@ def load_splunk_registry(service, json_filename):
         def datasource(index,ds):
             description = ds['description'] if 'description' in ds else ""
             metadata = reg.TableMetadata(ds['fields'])
-            return SplunkDataSource(service, metadata, description, index)
+            return SplunkDataSource(service, metadata, index, description)
         d = {index:datasource(index,ds) for index, ds in js.items()}
         return reg.Registry(d)
 
@@ -32,7 +32,7 @@ def _missing_fields(table_meta, field_counts, ignore=[]):
 _omit_fields=['_indextime', '_kv', '_raw','_serial','_sourcetype', '_time']
 
 class SplunkDataSource(reg.DataSource):
-    def __init__(self, splunk_service, metadata, description, index):
+    def __init__(self, splunk_service, metadata, index, description=""):
         super(SplunkDataSource, self).__init__(metadata, description, {
             '==': reg.Equals,
             '=~':  reg.MatchesCond

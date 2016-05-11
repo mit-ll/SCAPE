@@ -6,6 +6,23 @@ import scape.registry as r
 
 import pyparsing
 
+# Dimension #############################################################
+
+@raises(ValueError)
+def test_dim_badarg():
+    dim(1)
+
+@raises(ValueError)
+def test_dim_badarg2():
+    Dim(1)
+
+def test_dim_repr():
+    d = dim('ip')
+    assert d == eval(repr(d))
+
+def test_dim_html():
+    d = dim('ip')
+    d._repr_html_()
 
 def test_parse_dims():
     assert dim(None) == None
@@ -13,12 +30,55 @@ def test_parse_dims():
     d = dim('src')
     assert dim(d) == d
 
+# Tag ##################################################################
+
+def test_tag_repr():
+    r = Tag('tag')
+    assert r == eval(repr(r))
+
+def test_tag_html():
+    Tag('g')._repr_html_()
+
+@raises(ValueError)
+def test_bad_arg():
+    Tag(1)
+
+def test_tag():
+    assert tag('t') == Tag('t')
+
+# Field ################################################################
+
+def test_field_repr():
+    r = Field('f')
+    assert r == eval(repr(r))
+
+# TagsDim ##############################################################
+
+@raises(ValueError)
+def test_tagsdim_str():
+    TagsDim(tags=["asdf"])
+
+@raises(ValueError)
+def test_tagsdim_baddim():
+    TagsDim(dim=1)
+
+@raises(ValueError)
+def test_tagsdim_badarg():
+    tagsdim(1)
+
+def test_tagsdim_repr():
+    t = tagsdim("tag1:dim")
+    assert t == eval(repr(t))
+
 def test_parse_tagsdim():
+    assert tagsdim(['tag1', 'dim']) == TagsDim(dim=Dim('dim'), tags=[Tag('tag1')])
     assert tagsdim('dim') == TagsDim(dim=Dim('dim'))
     assert tagsdim(':dim') == TagsDim(dim=Dim('dim'))
     assert tagsdim('tag1:') == TagsDim(tags=[Tag('tag1')])
     assert tagsdim('tag1:dim') == TagsDim(dim=Dim('dim'), tags=[Tag('tag1')])
     assert tagsdim('tag1:tag2:dim') == TagsDim(dim=Dim('dim'), tags=[Tag('tag1'), Tag('tag2')])
+
+# Binary Condition #####################################################
 
 def test_parse_field_eq_num():
     assert r._parse_binary_condition('@asdf == 23') == GenericBinaryCondition(Field('asdf'), '==', 23)
@@ -52,10 +112,12 @@ def test_parse_tagdim_eq_num():
 def test_parse_tags_eq_num():
     r._parse_binary_condition("tag1:tag2 == 23")
 
+
+# Field Selectors ######################################################
+
 def test_parse_tagdim_field_list_fields1():
     def f(x):
         res = r._parse_list_fieldselectors(x)
-#        print(x,res,type(res))
         return res
     assert f("*")==[]
     assert f("")==[]
@@ -63,11 +125,167 @@ def test_parse_tagdim_field_list_fields1():
     assert f("@F,@G")==[Field('F'),Field('G')]
     assert f(":dim")==[tagsdim("dim")]
     assert f("tag:,:dim")==[tagsdim('tag:'),tagsdim("dim")]
-    
+
 @raises(pyparsing.ParseException)
 def test_bad_fieldselectors():
     r._parse_list_fieldselectors("@categories == 'General'")
 
+
+# Table Metadata #######################################################
+
+def test_tablemeta_of_dicts():
+    TableMetadata({'clientip' : { 'tags' : ['client'], 'dim':'ip' }})
+
+tm = TableMetadata({'clientip' : { 'tags' : ['client'], 'dim':'ip' }})
+
+def test_tablemeta_html():
+    tm._repr_html_()
+
+def test_tm_tdselect():
+    assert tm._tagsdim_subset(tagsdim(':'), tagsdim('src:ip'))
+    assert tm._tagsdim_subset(tagsdim(':ip'), tagsdim('src:ip'))
+    assert not tm._tagsdim_subset(tagsdim(':mac'), tagsdim('src:ip'))
+
+    assert tm._tagsdim_subset(tagsdim('src:'), tagsdim('src:ip'))
+    assert not tm._tagsdim_subset(tagsdim('src:mac'), tagsdim('src:ip'))
+    assert not tm._tagsdim_subset(tagsdim('src:nat:ip'), tagsdim('src:ip'))
+
+    assert tm._tagsdim_subset(tagsdim('src:'), tagsdim('src:'))
+    assert tm._tagsdim_subset(tagsdim('src:'), tagsdim('src:nat:'))
+
+def test_tagsdim_matchs():
+    # not in table metadata
+    assert not tm.tagsdim_matches(tagsdim(':'), Field('ip_addr'))
+
+    assert tm.tagsdim_matches(tagsdim(':'), Field('clientip'))
+    assert tm.tagsdim_matches(tagsdim(':ip'), Field('clientip'))
+    assert not tm.tagsdim_matches(tagsdim(':mac'), Field('clientip'))
+
+def test_fields_matching():
+    assert tm.fields_matching(Field('clientip')) == [Field('clientip')]
+    assert tm.fields_matching(tagsdim(':ip')) == [Field('clientip')]
+    assert tm.fields_matching(tagsdim(':mac')) == []
+
+@raises(ValueError)
+def test_fields_matching_badarg():
+    assert tm.fields_matching(1)
+
+def test_has_field():
+    assert tm.has_field(Field('clientip'))
+    assert not tm.has_field(Field('asdf'))
+
+def test_properties():
+    tm.fields
+    tm.field_names
+
+def test_repr():
+    repr(tm) # no equality defined for table metadata
+
+# Conditions ###########################################################
+
+def test_condition():
+    c = Condition()
+    assert c.fields() == []
+    assert c.map(lambda x:x) == c
+
+### Binary Condition
+def test_bc_repr():
+    c = BinaryCondition(tagsdim('t:d'), 2)
+    assert c == eval(repr(c))
+
+### Generic Binary Condition
+
+def test_gbc_repr():
+    c = GenericBinaryCondition(tagsdim('t:d'), '==', 2)
+    assert c == eval(repr(c))
+
+### Equals
+
+def test_equals_repr():
+    c = Equals(tagsdim('t:d'), 2)
+    assert c == eval(repr(c))
+
+### Matches
+
+def test_matches_repr():
+    c = MatchesCond(tagsdim('t:d'), 2)
+    assert c == eval(repr(c))
+
+### Greater Than
+
+def test_gt_repr():
+    c = GreaterThan(tagsdim('t:d'), 2)
+    assert c == eval(repr(c))
+
+### Greater Than Equal To
+
+def test_gteq_repr():
+    c = GreaterThanEqualTo(tagsdim('t:d'), 2)
+    assert c == eval(repr(c))
+
+### Or
+
+def test_or_repr():
+    c = Or([Equals(tagsdim('src:ip'), 2)])
+    assert c == eval(repr(c))
+
+def test_or_fields():
+    c = Or([Equals(Field('x'), 2)])
+    assert [Field('x')] == list(c.fields())
+
+def flip(x):
+    if isinstance(x, Equals):
+        return Equals(x.lhs, 2 * x.rhs)
+    elif isinstance(x, Or):
+        return And(x.xs)
+    elif isinstance(x, And):
+        return Or(x.xs)
+    else:
+        return x
+
+def test_or_map():
+    c = Or([Equals(Field('x'), 2)])
+    actual = c.map(flip)
+    expected = And([Equals(Field('x'), 4)])
+    assert actual == expected
+
+def test_or_leaves_map():
+    c = Or([Equals(Field('x'), 2)])
+    actual = c.map_leaves(flip)
+    expected = Or([Equals(Field('x'), 4)])
+    assert actual == expected
+
+@raises(ValueError)
+def test_or_condition0():
+    r._or_condition([])
+
+def test_or_condition1():
+    e = Equals(Field('x'), 2)
+    assert e == r._or_condition([e])
+
+def test_or_condition_many():
+    cs = [Equals(Field('x'), 2), Equals('y', 3)]
+    assert cs == r._or_condition([cs])
+
+### And
+
+def test_and_repr():
+    a = And([Equals(Field('x'), 2)])
+    assert a == eval(repr(a))
+
+def test_and_fields():
+    a = And([Equals(Field('x'), 2)])
+    assert [Field('x')] == list(a.fields())
+
+def test_and_map():
+    x = And([Equals(Field('x'), 2)])
+    actual = x.map(flip)
+    expected = Or([Equals(Field('x'), 4)])
+    assert actual == expected
+
+def test_and_map_leaves():
+    a = And([Equals(Field('x'), 2)])
+    assert And([Equals(Field('x'), 4)]) == a.map_leaves(flip)
 
 
 weblog_metadata = TableMetadata({
@@ -108,39 +326,174 @@ weblog_data = [ {
 def interpret(cond):
     if isinstance(cond, Equals):
         return lambda r: r[cond.lhs.name]==cond.rhs
+    elif isinstance(cond, GreaterThan):
+        return lambda r: r[cond.lhs.name]>cond.rhs
+    elif isinstance(cond, GreaterThanEqualTo):
+        return lambda r: r[cond.lhs.name]>=cond.rhs
     elif isinstance(cond, MatchesCond):
         return lambda r: re.match(cond.rhs, r[cond.lhs.name])
     elif isinstance(cond, And):
         return lambda r: all([interpret(c)(r) for c in cond.xs])
     elif isinstance(cond, Or):
         return lambda r: any([interpret(c)(r) for c in cond.xs])
+    elif isinstance(cond, TrueCondition):
+        return lambda r: True
     else:
         raise ValueError("Unexpected condition {}".format(str(cond)))
 
-
 class PythonDataSource(DataSource):
     def __init__(self, metadata, data):
-        super(PythonDataSource, self).__init__(metadata, {
+        super(PythonDataSource, self).__init__(metadata, "description", {
             '==': Equals,
             '=~':  MatchesCond
         })
         self._data = data
 
     def run(self, select):
-        self.check_query(select._condition)
-#        print(self._fields_or_tagsdim)
-#        print(self._condition)
+        self.check_select(select)
+
+        fs = set()
+        for selector in select._fields:
+            xs = [f.name for f in self._metadata.fields_matching(selector)]
+            fs = fs.union(set(xs))
+
+        def proj(x):
+            return {k:v for k, v in x.items() if k in fs}
+
         cond = self._rewrite(select._condition)
         f = interpret(cond)
-        return list(filter(f, self._data))
-    
+        return [proj(f) for f in filter(f, self._data)]
+
 ds =  PythonDataSource(weblog_metadata, weblog_data)
-#print('test')
-#print(ds.metadata)
+
+# Data Source ##########################################################
+
+def test_ds_default_name():
+    assert ds.name == "Unknown"
+
+@raises(ValueError)
+def test_not_implmented_run():
+    DataSource(TableMetadata({}),description="", op_dict={}).select().run()
+
+def test_ds_properties():
+    ds.name
+    ds.metadata
+
+def test_ds_repr():
+    repr(ds)
+
+def test_ds_html():
+    ds._repr_html_()
+
+# rewrite_generic_binary_condition
+
+def test_ds_remove_generic_binary_condition():
+    c = GenericBinaryCondition(Field('f'),'==', '23')
+    r = ds._rewrite_generic_binary_condition(c)
+    assert r == Equals(Field('f'), '23')
+
+def test_ds_unnecessary_remove_generic_binary_condition():
+    c = Equals(Field('f'),'23')
+    r = ds._rewrite_generic_binary_condition(c)
+    assert c == r
+
+@raises(ValueError)
+def test_ds_remove_generic_binary_condition_unsupported_op():
+    c = GenericBinaryCondition(Field('f'),'<>', '23')
+    ds._rewrite_generic_binary_condition(c)
+
+# rewrite_tagsdim
+def gbceq(l,r):
+    return GenericBinaryCondition(l, '==', r)
+
+def test_ds_rewrite_tagsdim_to_or():
+    c = gbceq(tagsdim(':ip'), '1.2.3.4')
+    r = ds._rewrite_tagsdim(c)
+    expected = Or([gbceq(Field('clientip'), '1.2.3.4'), gbceq(Field('serverip'), '1.2.3.4')])
+    assert expected == r
+
+def test_ds_rewrite_tagsdim_nogbc():
+    c = Equals(tagsdim(':ip'), '1.2.3.4')
+    r = ds._rewrite_tagsdim(c)
+    assert c == r
+
+@raises(ValueError)
+def test_ds_rewrite_tagsdim_no_fields():
+    c = gbceq(tagsdim(':mac'), '1:2:3:4:5:6')
+    # No fields have dimension=mac
+    ds._rewrite_tagsdim(c)
+
+# rewrite_outer_and
+
+def test_and0():
+    actual = ds._rewrite_outer_and(And([]))
+    assert TrueCondition() == actual
+
+def test_and1():
+    a = Equals(Field('a'), '1')
+    actual = ds._rewrite_outer_and(And([a]))
+    assert a == actual
+
+def test_and_rparen():
+    a = Equals(Field('a'), '1')
+    b = Equals(Field('b'), '1')
+    c = Equals(Field('d'), '1')
+    actual = ds._rewrite_outer_and(And([And([a,b]),c]))
+    assert And([a,b,c]) == actual
 
 def test_select_all():
     assert len(ds.select().run()) == len(weblog_data)
 
-#def test_select_eq():
-#    assert len(ds.select().where("@clientip == 7.8.9.2").run()) == 1
+# check fields
 
+@raises(ValueError)
+def test_check_fields():
+    ds._check_fields(Equals(Field('a'), '1'))
+
+
+# Registry #############################################################
+
+def test_registry():
+    r = Registry({'testds':ds})
+
+def test_html():
+    r = Registry({'testds':ds})
+    r._repr_html_()
+
+
+# Select ###############################################################
+
+def test_select_repr():
+    # TODO DataSource not round tripping
+    repr(ds.select(':ip'))
+
+def test_select_copy():
+    q = ds.select(':ip')
+    q2 = q._copy()
+    # TODO __eq__ for select, need to account for attrs
+#    assert q == q2
+
+def test_add_where():
+    q = ds.select(':ip')
+    q2 = q.where(':ip==1.2.3.4')
+    q3 = q.where(Equals(Field('clientip'), '1.2.3.4'))
+
+@raises(ValueError)
+def test_add_where_badarg():
+    q = ds.select(':ip')
+    q2 = q.where(1)
+
+def test_select_set_fields():
+    q = ds.select(':ip')
+    q2 = q.fields(':mac')
+
+def test_select_check():
+    ds.select(':ip').check()
+
+def test_select_debug():
+    ds.select(':ip').debug()
+
+def test_select_fields():
+    pass
+#    print(ds.select(':ip').run())
+#    assert [Field('clientip'), Field('serverip')] == ds.select(':ip')._fields

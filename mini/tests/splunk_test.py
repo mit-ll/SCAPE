@@ -35,7 +35,8 @@ reg = reg.Registry({
             'Source_Port': { 'tags' : [ 'source'], 'dim': 'port' },
             'host': 'hostname:'
             }),
-        index='addc')
+        index='addc',
+        description="Test data source")
     })
 
 addc=reg['addc']
