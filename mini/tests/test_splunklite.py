@@ -16,8 +16,18 @@ class TestSplunkLiteService(unittest.TestCase):
 
     @all_requests
     def session_key_response_content(self, url, request):
-        #headers = {'contetn
-        pass
+        headers = {
+            'cache-control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'connection': 'Keep-Alive',
+            'content-length': '154',
+            'content-type': 'text/xml; charset=UTF-8',
+            'date': 'Wed, 11 May 2016 02:14:12 GMT',
+            'expires': 'Thu, 26 Oct 1978 00:00:00 GMT',
+            'server': 'Splunkd',
+            'x-content-type-options': 'nosniff',
+            'x-frame-options': 'SAMEORIGIN',
+        }
+
 
     def test_session_key(self):
         s = slite.Service('host1', 9999, protocol='http')
