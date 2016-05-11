@@ -86,6 +86,8 @@ def get_unverified(*args, **kw):
         return requests.get(*args, **kw)
 
 class SplunkConnectError(Exception): pass
+SplunkConnectionError = SplunkConnectError
+class SplunkSessionKeyError(Exception): pass
 
 class HttpTrait(object):
     '''Simple HTTP trait that provides http_get and http_post behaviors
@@ -188,11 +190,11 @@ class Service(object):
     '''
     def __init__(self, host='localhost', port=8089,
                  username='', password='', protocol='https'):
-        self.protocol = protocol
         self.host = host
         self.port = port
         self.username = username
         self.password = password
+        self.protocol = protocol
         
 
     @property
@@ -211,7 +213,7 @@ class Service(object):
         if r.ok:
             key = etree.fromstring(r.text).find('sessionKey').text
         else:
-            raise SplunkConnectError('could not get session key: {}'.format(r))
+            raise SplunkSessionKeyError('could not get session key: {}'.format(r))
         return key
     
     _session_key = None
