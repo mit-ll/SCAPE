@@ -44,10 +44,14 @@ import xml.etree.ElementTree as etree
 import logging
 import collections
 
+import requests
+
 _log = logging.getLogger('splunklite')
 _log.addHandler(logging.NullHandler())
-
-import requests
+def _log_error_response(response):
+    _log.error('code: {}'.format(response.status_code))
+    _log.error('reason: {}'.format(response.reason))
+    _log.error('content: {}'.format(response.text))
 
 def post_unverified(*args, **kw):
     '''Simple wrapper around ``requests.post`` that allows for HTTPS GETs to
@@ -88,6 +92,8 @@ def get_unverified(*args, **kw):
 class SplunkConnectError(Exception): pass
 SplunkConnectionError = SplunkConnectError
 class SplunkSessionKeyError(Exception): pass
+class SplunkJobCreationError(Exception): pass
+class SplunkAuthenticationError(Exception): pass
 
 class HttpTrait(object):
     '''Simple HTTP trait that provides http_get and http_post behaviors
@@ -297,33 +303,37 @@ def response_to_dict(response):
       Dict[ str, Union[str, List[str]] ]
 
     '''
-    tree = etree.fromstring(response.text)
-    def recurse(node, nobj=None):
-        nobj = nobj if nobj is not None else {}
-        if node is None:
-            return nobj
-        for key in node.findall('rest:key',_NS):
-            name = key.get('name')
-            cdict = key.find('rest:dict',_NS) 
-            clist = key.find('rest:list',_NS)
-            if cdict is not None:
-                nobj[name] = recurse(cdict, {})
-            elif clist is not None:
-                nobj[name] = recurse(clist, [])
-            else:
-                nobj[name] = key.text
+    attrs = {}
+    data = response.text
+    if data:
+        tree = etree.fromstring(response.text)
+        def recurse(node, nobj=None):
+            nobj = nobj if nobj is not None else {}
+            if node is None:
+                return nobj
+            for key in node.findall('rest:key',_NS):
+                name = key.get('name')
+                cdict = key.find('rest:dict',_NS) 
+                clist = key.find('rest:list',_NS)
+                if cdict is not None:
+                    nobj[name] = recurse(cdict, {})
+                elif clist is not None:
+                    nobj[name] = recurse(clist, [])
+                else:
+                    nobj[name] = key.text
 
-        for item in node.findall('rest:item',_NS):
-            cdict, clist = (item.find('rest:dict'),
-                            item.find('rest:list'))
-            if cdict is not None:
-                nobj.append(recurse(cdict, {}))
-            elif clist is not None:
-                nobj.append(recurse(clist, []))
-            else:
-                nobj.append(item.text)
-        return nobj
-    attrs = recurse(tree.find('./atom:content/rest:dict', _NS))
+            for item in node.findall('rest:item',_NS):
+                cdict, clist = (item.find('rest:dict'),
+                                item.find('rest:list'))
+                if cdict is not None:
+                    nobj.append(recurse(cdict, {}))
+                elif clist is not None:
+                    nobj.append(recurse(clist, []))
+                else:
+                    nobj.append(item.text)
+            return nobj
+        attrs = recurse(tree.find('./atom:content/rest:dict', _NS))
+
     return attrs
 
 class Job(dict, HttpTrait):
@@ -398,16 +408,20 @@ class Job(dict, HttpTrait):
                 try:
                     self._id = sid.text
                 except AttributeError:
-                    _log.error(r.text)
+                    _log_error_response(r)
                     raise
             else:
-                _log.error('code: {}'.format(r.status_code))
-                _log.error('content: {}'.format(r.text))
-                raise SplunkConnectError('could not retrieve SID')
+                _log_error_response(r)
+                raise SplunkJobCreationError('could not retrieve SID')
         else:
-            _log.error('code: {}'.format(r.status_code))
-            _log.error('content: {}'.format(r.text))
-            raise SplunkConnectError('could not create splunk job')
+            _log_error_response(r)
+            if r.status_code == 400:
+                # bad search
+                raise SplunkJobCreationError('bad search command')
+            elif r.status_code == 401:
+                raise SplunkAuthenticationError('bad authentication')
+            else:
+                raise SplunkJobCreationError('unknown job creation error')
 
     def refresh(self):
         ''' Refresh the attributes of this :class:`Job`
@@ -522,6 +536,29 @@ class Results(collections.Iterator, HttpTrait):
         
         self.index = 0
 
+    @property
+    def url(self):
+        ''' str: URL for this results object
+        '''
+        return '{base}/results_preview'.format(base=self._job.url)
+
+    @property
+    def header(self):
+        ''' Dict[str, str]: HTTP header 
+        '''
+        return self._job.header
+
+    @property
+    def params(self):
+        ''' Dict[str, str]: HTTP GET parameters for retrieving results
+        '''
+        params = self._params.copy()
+        params.update({
+            'output_mode': 'json',
+            'offset': str(self.index),
+        })
+        return params
+
     def __iter__(self):
         return self
 
@@ -537,8 +574,7 @@ class Results(collections.Iterator, HttpTrait):
                 else:
                     self._results = results
             else:
-                _log.error('Bad results: {} {}'.format(r.status_code, r.reason))
-                _log.error('content:\n {}'.format(r.text))
+                _log_error_response(r)
                 raise SplunkConnectError('could not retrieve results, see log')
             
             for row in results:
@@ -557,28 +593,6 @@ class Results(collections.Iterator, HttpTrait):
             self._generator = self._row_generator()
         return next(self._generator)
     next = __next__
-
-    @property
-    def url(self):
-        ''' str: URL for this results object
-        '''
-        return '{base}/results_preview'.format(base=self._job.url)
-    @property
-    def header(self):
-        ''' Dict[str, str]: HTTP header 
-        '''
-        return self._job.header
-
-    @property
-    def params(self):
-        ''' Dict[str, str]: HTTP GET parameters for retrieving results
-        '''
-        data = self._params.copy()
-        data.update({
-            'output_mode': 'json',
-            'offset': str(self.index),
-        })
-        return data
 
 
 
