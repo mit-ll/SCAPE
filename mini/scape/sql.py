@@ -176,6 +176,7 @@ class SqlDataSource(scape.registry.DataSource):
     ... )
     >>> df = sqldata['auth'].select('source:host==C149*').run()
     '''
+
     def __init__(self, engine, metadata, table, description=""):
         super(SqlDataSource, self).__init__(metadata, description, {
             '==': scape.registry.Equals,
