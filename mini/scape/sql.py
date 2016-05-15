@@ -131,10 +131,10 @@ def _condition_to_where(condition):
         value = '({} {} "{}")'.format(lhs, operator, rhs)
 
     elif isinstance(condition, scape.registry.Or):
-        value = _paren([_condition_to_where(x) for x in condition.xs], 'OR')
+        value = _paren([_condition_to_where(x) for x in condition.parts], 'OR')
 
     elif isinstance(condition, scape.registry.And):
-        value = _paren([_condition_to_where(x) for x in condition.xs], 'AND')
+        value = _paren([_condition_to_where(x) for x in condition.parts], 'AND')
 
     return value
 
@@ -187,7 +187,7 @@ class SqlDataSource(scape.registry.DataSource):
 
     def _get_field_names(self, select):
         names = set()
-        for selector in select._fields:
+        for selector in select.fields:
             names.update(f.name for f in self._metadata.fields_matching(selector))
             _log.debug(names)
         return sorted(names)
@@ -205,7 +205,7 @@ class SqlDataSource(scape.registry.DataSource):
           sqlalchemy.sql.elements.TextClause: text clause for this Select
 
         '''
-        condition = self._rewrite(select._condition)
+        condition = self._rewrite(select.condition)
         where_clause = _condition_to_where(condition)
         fields = self._get_field_names(select)
         # XXXX FIX!!!! XXXX

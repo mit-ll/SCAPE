@@ -55,38 +55,34 @@ class SplunkDataSource(reg.DataSource):
         return kwargs
 
     def _fields_pipe(self, select):
-        if select._fields:
-            fs = set()
-            for selector in select._fields:
-                xs = [f.name for f in self._metadata.fields_matching(selector)]
-                fs = fs.union(set(xs))
-            fields = "| fields " + ", ".join(fs)
-        else:
-            fields = ""
-        return fields
+        fields_pipe = ""
+        if select.fields:
+            field_names = self.field_names(select)
+            fields_pipe = "| fields " + ", ".join(field_names)
+        return fields_pipe
 
     def _pipe_omitted_fields(self,select):
-        fs = list(set(_omit_fields) - set(select._fields))
+        fs = list(set(_omit_fields) - set(select.fields))
         return "| fields - " + ", ".join(fs)
 
     def debug_select(self, select):
         self.check_select(select, debug=True)
 
     def check_select(self, select, debug=False):
-        cond = self._rewrite(select._condition)
+        cond = self._rewrite(select.condition)
         search_query = _go(cond)
         fields = self._fields_pipe(select)
         omitted_fields = self._pipe_omitted_fields(select)
         query = "search index={} {} {} {}".format(self._index, search_query, fields, omitted_fields)
         if debug:
             print("splunk_params=", self._get_splunk_params(select))
-            print("condition=", select._condition)
-            print("fields=", select._fields)
+            print("condition=", select.condition)
+            print("fields=", select.fields)
             print("omitted_fields=", omitted_fields)
             print("splunk query=[", query, "]")
 
     def run(self, select):
-        cond = self._rewrite(select._condition)
+        cond = self._rewrite(select.condition)
         search_query = _go(cond)
         fields = self._fields_pipe(select)
         omitted_fields = self._pipe_omitted_fields(select)
@@ -99,9 +95,9 @@ class SplunkDataSource(reg.DataSource):
 #        return synchronous_get(self._service, "search index={} {}".format(self._index, search_query), **kwargs)
 
 def get_all_index_fields(service):
-    ixs = service.indexes.list()
+    indexes = service.indexes.list()
     res = {}
-    for ix in ixs:
+    for index in indexes:
         if int(ix.state['content']['totalEventCount']) > 0:
             print("Getting ", ix.name)
             fields = get_splunk_fields(service, ix.name)
@@ -115,8 +111,8 @@ def get_splunk_fields(service, index, max=30000, inclusion_percent=0.01):
     ""
     query = "search index={} earliest=-1d | head {} | fieldsummary | table field count | where count > {}".format(index, max, max * inclusion_percent)
     kw = { 'exec_mode' : 'normal', 'count' : 0 }
-    xs = synchronous_get(service, query, **kw)
-    return {f['field']:f['count'] for f in xs}
+    fields = synchronous_get(service, query, **kw)
+    return {f['field']:f['count'] for f in fields}
 
 class SplunkResults():
     def __init__(self, job):
@@ -204,12 +200,12 @@ def synchronous_get(service, query, **kwargs):
     job.cancel()
     return res
 
-def _paren(xs, sep):
-    if len(xs)==1:
-        return xs[0]
+def _paren(parts, sep):
+    if len(parts)==1:
+        return parts[0]
     else:
         s = ' ' + sep + ' '
-        return '(' + s.join(xs) + ')'
+        return '(' + s.join(parts) + ')'
 
 def _go(cond):
     if isinstance(cond, reg.Equals):
@@ -217,9 +213,9 @@ def _go(cond):
 #    elif isinstance(cond, MatchesCond):
 #        return "({}={})".format(cond.lhs, cond.rhs)
     elif isinstance(cond, reg.Or):
-        return _paren([_go(x) for x in cond.xs], 'OR')
+        return _paren([_go(x) for x in cond.parts], 'OR')
     elif isinstance(cond, reg.And):
-        return _paren([_go(x) for x in cond.xs], 'AND')
+        return _paren([_go(x) for x in cond.parts], 'AND')
 
 
 def _save_to_json(x, filename):
