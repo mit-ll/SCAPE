@@ -185,7 +185,7 @@ def test_repr():
 
 def test_condition():
     c = Condition()
-    assert_equal( c.fields() , [])
+    assert_equal( c.fields , [])
     assert_equal( c.map(lambda x:x) , c)
 
 ### Binary Condition
@@ -231,15 +231,15 @@ def test_or_repr():
 
 def test_or_fields():
     c = Or([Equals(Field('x'), 2)])
-    assert_equal( [Field('x')] , list(c.fields()))
+    assert_equal( [Field('x')] , list(c.fields))
 
 def flip(x):
     if isinstance(x, Equals):
         return Equals(x.lhs, 2 * x.rhs)
     elif isinstance(x, Or):
-        return And(x.xs)
+        return And(x.parts)
     elif isinstance(x, And):
-        return Or(x.xs)
+        return Or(x.parts)
     else:
         return x
 
@@ -275,7 +275,7 @@ def test_and_repr():
 
 def test_and_fields():
     a = And([Equals(Field('x'), 2)])
-    assert_equal( [Field('x')] , list(a.fields()))
+    assert_equal( [Field('x')] , list(a.fields))
 
 def test_and_map():
     x = And([Equals(Field('x'), 2)])
@@ -333,9 +333,9 @@ def interpret(cond):
     elif isinstance(cond, MatchesCond):
         return lambda r: re.match(cond.rhs, r[cond.lhs.name])
     elif isinstance(cond, And):
-        return lambda r: all([interpret(c)(r) for c in cond.xs])
+        return lambda r: all([interpret(c)(r) for c in cond.parts])
     elif isinstance(cond, Or):
-        return lambda r: any([interpret(c)(r) for c in cond.xs])
+        return lambda r: any([interpret(c)(r) for c in cond.parts])
     elif isinstance(cond, TrueCondition):
         return lambda r: True
     else:
@@ -352,13 +352,9 @@ class PythonDataSource(DataSource):
     def run(self, select):
         self.check_select(select)
 
-        fs = set()
-        for selector in select._fields:
-            xs = [f.name for f in self._metadata.fields_matching(selector)]
-            fs = fs.union(set(xs))
-
+        field_names = self.field_names(select)
         def proj(x):
-            return {k:v for k, v in x.items() if k in fs}
+            return {k:v for k, v in x.items() if k in field_names}
 
         cond = self._rewrite(select._condition)
         f = interpret(cond)
@@ -371,7 +367,7 @@ ds =  PythonDataSource(weblog_metadata, weblog_data)
 def test_ds_default_name():
     assert_equal( ds.name , "Unknown")
 
-@raises(ValueError)
+@raises(NotImplementedError)
 def test_not_implmented_run():
     DataSource(TableMetadata({}),description="", op_dict={}).select().run()
 
@@ -469,7 +465,7 @@ def test_select_repr():
 
 def test_select_copy():
     q = ds.select(':ip')
-    q2 = q._copy()
+    q2 = q.copy()
     # TODO __eq__ for select, need to account for attrs
 #    assert q == q2
 
@@ -485,7 +481,7 @@ def test_add_where_badarg():
 
 def test_select_set_fields():
     q = ds.select(':ip')
-    q2 = q.fields(':mac')
+    q2 = q.with_fields(':mac')
 
 def test_select_check():
     ds.select(':ip').check()

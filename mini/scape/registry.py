@@ -59,7 +59,7 @@ def td(dim=None, *tags):
 def tagsdim(td):
     if type(td) in (list, tuple):
         elements = td
-    elif isinstance(td, str):
+    elif isinstance(td, string_types):
         strd = td
         if ':' in strd:
             elements = strd.split(':')
@@ -97,7 +97,7 @@ class Field(object):
         return hash(self.name)
 
 def _field_or_tagsdim(x):
-    if isinstance(x, str):
+    if isinstance(x, string_types):
         if x.startswith("@"):
             return Field(x[1:])
         else:
@@ -135,15 +135,11 @@ def dim(d):
         return None
     if isinstance(d, Dim):
         return d
-    if isinstance(d, str):
+    if isinstance(d, string_types):
         return Dim(d)
     else:
         raise ValueError("Expecting Dim, str, or None. Not " + str(d))
-
-def _dim(d):
-    """An alias to dim(), allowing functions to call dim() while have a
-    parameters or variables named dim."""
-    return dim(d)
+_dim = dim
 
 class Tag(object):
     """  """
@@ -171,30 +167,23 @@ class Tag(object):
 def tag(t):
     return t if isinstance(t, Tag) else Tag(t)
 
-class Registry(dict):
-    """ A collection  of data sources. """
-
-    def __init__(self, data_sources):
-        """A dictionary from data source names to data source."""
-        self.update(data_sources)
-
-    def _repr_html_(self):
-        res = ['<table>']
-        def td(d):
-            res.extend(['<td>',d,'</td>'])
-        res.append('<tr><td><b>Name</b></td><td><b>Class</b></td><td><b>Description</b></td></tr>')
-        for k in sorted(self.keys()):
-            ds = self[k]
-            res.append('<tr>')
-            td(k)
-            td(ds.__class__.__name__)
-            td(ds.description)
-            res.append('</tr>')
-        res.append('</table>')
-        return "".join(res)
-
 class TableMetadata(object):
-    """ TableMetadata provides logic to map tag/dimension selectors to sets of fields. """
+    '''TableMetadata provides logic to map tag/dimension selectors to sets
+    of fields.
+
+    Example:
+
+    >>> md = TableMetadata({
+    ...    'field1': { 'tags' : [ 'tag1', 'tag2' ], 'dim' : 'dim1' },
+    ...    'field2': { 'tags' : [ 'tag1', 'tag2' ] },
+    ...    'field3': { 'dim' : 'dim1' },
+    ...    'field4': { } }
+    ... )
+    >>> 
+    '''
+    def __init__(self, field_to_tagsdim):
+        self._map = dict(self._from_map(field_to_tagsdim))
+
     def _from_map(self, m):
         for (k, v) in m.items():
             if isinstance(v, TagsDim):
@@ -203,18 +192,6 @@ class TableMetadata(object):
                 tags = [Tag(t) for t in (v['tags'] if 'tags' in v else [])]
                 dim = Dim(v['dim']) if 'dim' in v and v['dim'] else None
                 yield (k, TagsDim(tags, dim))
-
-    def __init__(self, m):
-        """ Construct table metadata from a dictionary of tags and dimensions
-
-        Example:
-            TableMetadata({
-               'field1': { 'tags' : [ 'tag1', 'tag2' ], 'dim' : 'dim1' },
-               'field2': { 'tags' : [ 'tag1', 'tag2' ] },
-               'field3': { 'dim' : 'dim1' },
-               'field4': { } })
-        """
-        self._map = dict(self._from_map(m))
 
     def _repr_html_(self):
         res = ['<table>']
@@ -290,6 +267,10 @@ def _create_table_field_tagsdim_map(m):
         raise ValueError("Expecting a dictionary, or TableMetadata, not " + str(type(m)))
 
 class Condition(object):
+    def copy(self):
+        raise NotImplementedError('need to implement in subclass')
+    
+    @property
     def fields(self):
         return []
 
@@ -306,31 +287,51 @@ class TrueCondition(Condition):
     def __eq__(self, other):
         return type(self) == type(other)
 
+class ConstituentCondition(Condition):
+    def __init__(self, parts):
+        self._parts = parts
 
-class And(Condition):
-    def __init__(self, xs):
-        self.xs = xs
-
-    def __eq__(self, other):
-        return type(self) == type(other) and frozenset(self.xs) == frozenset(other.xs)
-
-    def fields(self):
-        for c in self.xs:
-            for f in c.fields():
-                yield f
-
-    def map(self, f):
-        def g(x):
-            res =  f(x)
-#            print(x, "-->", res)
-            return res
-        return g(And([g(x) for x in self.xs]))
-
-    def map_leaves(self, f):
-        return And([x.map_leaves(f) for x in self.xs])
+    def copy(self):
+        copy = type(self)([p.copy() for p in self._parts])
+        return copy
 
     def __repr__(self):
-        return "And({!r})".format(self.xs)
+        return "{}({!r})".format(type(self).__name__, self._parts)
+
+    def __eq__(self, other):
+        return type(self) == type(other) and frozenset(self.parts) == frozenset(other.parts)
+
+    @property
+    def parts(self):
+        return self._parts[:]
+
+    @property
+    def fields(self):
+        fields = []
+        for part in self._parts:
+            fields.extend(part.fields)
+        return fields
+
+    def map(self, func):
+        return func(type(self)([func(x) for x in self._parts]))
+
+    def map_leaves(self, f):
+        return type(self)([x.map_leaves(f) for x in self._parts])
+
+
+class And(ConstituentCondition):
+    pass
+
+class Or(ConstituentCondition):
+    pass
+
+def _or_condition(parts):
+    if len(parts) == 1:
+        return parts[0]
+    elif len(parts) > 1:
+        return Or(parts)
+    else:
+        raise ValueError("Must have at least one condition in or")
 
 class BinaryCondition(Condition):
     def __init__(self, lhs, rhs):
@@ -338,10 +339,18 @@ class BinaryCondition(Condition):
         self._rhs = rhs
 
     def __repr__(self):
-        return "BinaryCondition({!r},{!r})".format(self._lhs, self._rhs)
+        return "{}({!r}, {!r})".format(type(self).__name__, self._lhs, self._rhs)
+
+    def __hash__(self):
+        return hash((type(self), self.lhs, self.rhs))
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.lhs == other.lhs and self.rhs == other.rhs
+        return (type(self) == type(other) and
+                self.lhs == other.lhs and
+                self.rhs == other.rhs)
+
+    def copy(self):
+        return type(self)(self._lhs, self._rhs)
 
     @property
     def lhs(self):
@@ -351,25 +360,49 @@ class BinaryCondition(Condition):
     def rhs(self):
         return self._rhs
 
+    @property
     def fields(self):
+        fields = []
         if isinstance(self.lhs, Field):
-            yield self.lhs
+            fields = [self.lhs]
+        return fields
+
+class Equals(BinaryCondition):
+    pass
+
+class MatchesCond(BinaryCondition):
+    pass
+
+class GreaterThan(BinaryCondition):
+    pass
+
+class GreaterThanEqualTo(BinaryCondition):
+    pass
+
 
 class GenericBinaryCondition(BinaryCondition):
-    """ Generic binary condition, not data source specific""
+    '''Generic binary condition, not data source specific
 
     Instances of BinaryCondition are created by the parsing condition
-    strings. The data source converts these to more specific conditions"""
+    strings. The data source converts these to more specific
+    conditions
+
+    '''
     def __init__(self, lhs, op, rhs):
         super(GenericBinaryCondition, self).__init__(lhs, rhs)
         self._op = op
+
+    def copy(self):
+        return GenericBinaryCondition(self._lhs, self._op, self._rhs)
 
     @property
     def op(self):
         return self._op
 
     def __repr__(self):
-        return "GenericBinaryCondition({!r},{!r},{!r})".format(self.lhs, self.op, self.rhs)
+        return "GenericBinaryCondition({!r},{!r},{!r})".format(
+            self.lhs, self.op, self.rhs
+        )
 
     def __hash__(self):
         return hash((self._op, self.lhs, self.rhs)) 
@@ -378,110 +411,65 @@ class GenericBinaryCondition(BinaryCondition):
         return (type(self) == type(other) and self.op == other.op
                 and self.lhs == other.lhs and self.rhs == other.rhs)
 
-
-class Equals(BinaryCondition):
-    def __init__(self, lhs, value):
-        super(Equals, self).__init__(lhs, value)
-
-    def __repr__(self):
-        return "Equals({!r},{!r})".format(self.lhs, self.rhs)
-
-    def __hash__(self):
-        return hash((type(self), self.lhs, self.rhs))
-
-    def __eq__(self, other):
-        return type(self) == type(other) and self.lhs == other.lhs and self.rhs == other.rhs
-
-class MatchesCond(BinaryCondition):
-    def __init__(self, lhs, value):
-        super(MatchesCond, self).__init__(lhs, value)
-
-    def __repr__(self):
-        return "MatchesCond({!r}, {!r})".format(self.lhs, self.rhs)
-
-class GreaterThan(BinaryCondition):
-    def __init__(self, lhs, value):
-        super(GreaterThan, self).__init__(lhs, value)
-
-    def __repr__(self):
-        return "GreaterThan({!r},{!r})".format(self.lhs, self.rhs)
-
-class GreaterThanEqualTo(BinaryCondition):
-    def __init__(self, lhs, value):
-        super(GreaterThanEqualTo, self).__init__(lhs, value)
-
-    def __repr__(self):
-        return "GreaterThanEqualTo({!r},{!r})".format(self.lhs, self.rhs)
-
-class Or(Condition):
-    def __init__(self, xs):
-        self.xs = xs
-
-    def __eq__(self, other):
-        return type(self) == type(other) and frozenset(self.xs) == frozenset(other.xs)
-
-    def fields(self):
-        for c in self.xs:
-            for f in c.fields():
-                yield f
-
-    def map(self, f):
-        return f(Or([f(x) for x in self.xs]))
-
-    def map_leaves(self, f):
-        return Or([x.map_leaves(f) for x in self.xs])
-
-    def __repr__(self):
-        return "Or({})".format(repr(self.xs))
-
-def _or_condition(xs):
-    if len(xs) == 1:
-        return xs[0]
-    elif len(xs) > 1:
-        return Or(xs)
-    else:
-        raise ValueError("Must have at least one condition in or")
-
-
 class Select(object):
-    def __init__(self, data_source, fields=None, condition=And([]), **kwargs):
-        """From a data_source select [fields] from rows mathcing the given condition"""
-        if fields is None:
-            fields = []
+    '''Selection of :class:`Field` objects associated with a particular
+    :class:`DataSource` possibly with match conditions for rows from
+    data source
+
+    Args:
+
+      data_source (DataSource): Subclass of :class:`DataSource` that
+        this selection is associated with.
+
+      fields (List[:class:`Field`]): 
+
+    '''
+    def __init__(self, data_source, fields=None, condition=None, **ds_kwargs):
+        fields = fields if fields else []
+        condition = condition if condition else And([])
+
         self._data_source = data_source
-        self._condition = condition
-        self._fields = fields
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+
+        self._condition = _parse_binary_condition(condition)
+        self._fields = _parse_list_fieldselectors(fields)
+
+        self._ds_kwargs = copy.deepcopy(ds_kwargs)
 
     def __repr__(self):
         return "Select({!r}, {!r}, {!r})".format(
-            self._data_source, self._fields, self._condition)
+            self._data_source, self._fields, self._condition, 
+        )
 
-    def _copy(self):
-        c = Select(self._data_source, self._fields, copy.copy(self._condition))
-#        c.__dict__ = copy.deepcopy(self.__dict__)
-        for k, v in self.__dict__.items():
-            c.__dict__[k] = v
-        return c
+    def copy(self):
+        return Select(self._data_source, self._fields, self._condition,
+                      **self._ds_kwargs)
 
-    def where(self, x=None):
-        res = self._copy()
-        if isinstance(x, str):
-            newcond = _parse_binary_condition(x)
-        elif isinstance(x, Condition):
-            newcond = x
-        else:
-            raise ValueError("Expecting string or Condition, not {}".format(x))
+    @property
+    def ds_args(self):
+        ''' :class:`DataSource`-specific keyword args for this selection
+        '''
+        return namedtuple(
+            'DataSourceArgs', sorted(self._ds_kwargs.keys())
+        )(**self._ds_kwargs)
 
-        res._condition = And([newcond, res._condition])
-        self._data_source.check_select(self)
-        return res
+    @property
+    def fields(self):
+        return self._fields[:]
 
-    def fields(self, _fields):
-        res = self._copy()
-        res._fields = _parse_list_fieldselectors(_fields)
-        return res
+    @property
+    def condition(self):
+        return self._condition.copy()
+
+    def where(self, condition=None):
+        condition = And([_parse_binary_condition(condition), self._condition])
+        copy = Select(self._data_source, self._fields, condition,
+                      **self._ds_kwargs)
+        copy.check()
+        return copy
+
+    def with_fields(self, fields):
+        return Select(self._data_source, fields, self._condition,
+                      **self._ds_kwargs)
 
     def check(self):
         return self._data_source.check_select(self)
@@ -490,36 +478,28 @@ class Select(object):
         return self._data_source.debug_select(self)
 
     def run(self):
-        """ Execute a query.
+        ''' Execute a query.
 
         Returns a data source specific object containing the results
-        """
+        '''
         return self._data_source.run(self)
 
 
 class DataSource(object):
-#    def __dir__(self):
-#        print('__dir__')
-#        return dir(type(self)) + list(self.__dict__) + list(self._metadata.field_names)
-
     def __init__(self, metadata, description, op_dict):
-        """
+        '''
         Args:
           metadata: Table metadata
           description: Description
           op_dict: Dictionary from infix operator name to Condition
-        """
-        self._description = description if description else ""
+        '''
+        self.description = description if description else ""
         self._metadata = metadata
         self._op_dict = op_dict
 
     @property
     def name(self):
         return getattr(self, '_name') if hasattr(self, '_name') else "Unknown"
-
-    @property
-    def description(self):
-        return self._description
 
     @property
     def metadata(self):
@@ -531,23 +511,31 @@ class DataSource(object):
     def _repr_html_(self):
         return self._metadata._repr_html_()
 
+    def field_names(self, select):
+        field_names = set()
+        for selector in select._fields:
+            field_names.update(
+                f.name for f in self._metadata.fields_matching(selector)
+            )
+        return sorted(field_names)
+
     def check_select(self, select):
-        """Perform data source specific checks on the query"""
-        pass
+        '''Perform data source specific checks on the query'''
+        return False
 
     def debug_select(self, select):
-        """Print data source specific debug output for the query"""
-        pass
+        '''Print data source specific debug output for the query'''
+        return False
 
     def run(self, select):
-        raise ValueError("Implement in subclass")
+        raise NotImplementedError('need to implement in subclass')
 
-    def select(self, fields='*', **kwargs):
+    def select(self, fields='*', condition=None, **ds_args):
         fields = _parse_list_fieldselectors(fields)
-        return Select(self, fields, **kwargs)
+        return Select(self, fields, condition, **ds_args)
 
     def _rewrite_generic_binary_condition(self, cond):
-        """Replace generic binary conditions by data source specific binary conditions"""
+        '''Replace generic binary conditions by data source specific binary conditions'''
         def rewrite(obj):
             if isinstance(obj, GenericBinaryCondition):
                 if obj.op in self._op_dict:
@@ -559,7 +547,7 @@ class DataSource(object):
         return cond.map_leaves(rewrite)
 
     def _rewrite_tagsdim(self, cond):
-        """Replace tagsdim with fields"""
+        '''Replace tagsdim with fields'''
         def rewrite(obj):
             if isinstance(obj, GenericBinaryCondition) and isinstance(obj.lhs, TagsDim):
                 fields = self._metadata.fields_matching(obj.lhs)
@@ -573,10 +561,10 @@ class DataSource(object):
         return res
 
     def _rewrite_outer_and(self, cond):
-        """Unnest ands. For example And(And(x,y),And(z)) -> And(x,y,z)"""
+        '''Unnest ands. For example And(And(x,y),And(z)) -> And(x,y,z)'''
         def walk(obj):
             if isinstance(obj, And):
-                for x in obj.xs:
+                for x in obj.parts:
                     for y in walk(x):
                         yield y
             else:
@@ -592,7 +580,7 @@ class DataSource(object):
 
     def _check_fields(self, cond):
         not_found = []
-        for f in cond.fields():
+        for f in cond.fields:
             if not self._metadata.has_field(f):
                 not_found.append(f.name)
         if not_found:
@@ -609,6 +597,39 @@ class DataSource(object):
 #            self._rewrite_generic_binary_condition(self._rewrite_tagsdim(cond)))
 #        return self._rewrite_generic_binary_condition()
         return res
+
+class Registry(dict):
+    '''A collection of data sources.
+
+    Args:
+
+      data_sources (Dict[:class:`DataSource`])): dictionary from data
+        source names to :class:`DataSource` objects
+
+    Example:
+
+    >>> registry = Registry( {
+    ... })
+    >>>
+    '''
+
+    def __init__(self, data_sources):
+        self.update(data_sources)
+
+    def _repr_html_(self):
+        res = ['<table>']
+        def td(d):
+            res.extend(['<td>',d,'</td>'])
+        res.append('<th>Name</th><th>Class</th><th>Description</th></tr>')
+        for k in sorted(self.keys()):
+            ds = self[k]
+            res.append('<tr>')
+            td(k)
+            td(ds.__class__.__name__)
+            td(ds.description)
+            res.append('</tr>')
+        res.append('</table>')
+        return "".join(res)
 
 
 ################################################################################
@@ -656,11 +677,23 @@ def _binary_condition_p():
     line.setParseAction(lambda s, l, toks: GenericBinaryCondition(toks[0], toks[1], toks[2]))
     return line
 
-def _parse_list_fieldselectors(x):
-    r = _list_tagdim_field_p().parseString(x, parseAll=True).asList()
+def _parse_list_fieldselectors(fields):
+    if type(fields) is list:
+        return fields
+    r = _list_tagdim_field_p().parseString(fields, parseAll=True).asList()
     if len(r) >= 1 and r[0] == '*':
         r = []
     return r
 
-def _parse_binary_condition(x):
-    return _binary_condition_p().parseString(x)[0]
+def _parse_binary_condition(condition):
+    if isinstance(condition, Condition):
+        return condition
+    elif not isinstance(condition, str):
+        raise ValueError(
+            "Expecting string or Condition, not {}={}".format(
+                type(condition),condition
+            )
+        )
+    return _binary_condition_p().parseString(condition)[0]
+
+
