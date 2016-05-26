@@ -6,4 +6,5 @@ nose
 jupyter 
 pandas
 mock
+sqlalchemy
 
