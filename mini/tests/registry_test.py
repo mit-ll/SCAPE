@@ -2,7 +2,7 @@ import re
 from nose.tools import *
 
 from scape.registry import *
-import scape.registry as r
+import scape.registry
 
 import pyparsing
 
@@ -81,43 +81,43 @@ def test_parse_tagsdim():
 # Binary Condition #####################################################
 
 def test_parse_field_eq_num():
-    assert_equal( r._parse_binary_condition('@asdf == 23') , GenericBinaryCondition(Field('asdf'), '==', 23))
+    assert_equal( scape.registry._parse_binary_condition('@asdf == 23') , GenericBinaryCondition(Field('asdf'), '==', 23))
 def test_parse_field_eq_float():
-    r._parse_binary_condition('@asdf == 2.03')
+    scape.registry._parse_binary_condition('@asdf == 2.03')
 def test_parse_field_eq_dblquote():
-    r._parse_binary_condition('@asdf == "asdf"')
+    scape.registry._parse_binary_condition('@asdf == "asdf"')
 def test_parse_field_eq_quote():
-    r._parse_binary_condition("@asdf == 'asdf'")
+    scape.registry._parse_binary_condition("@asdf == 'asdf'")
 def test_parse_field_eq_ip():
-    r._parse_binary_condition('@asdf == 2.3.4.5')
+    scape.registry._parse_binary_condition('@asdf == 2.3.4.5')
 
 # We don't yet support ()'s, ands, ors
 #def test_parse_field_eq_parens():
-#    r._parse_binary_condition('(@asdf == 2.3.4.5)')
+#    scape.registry._parse_binary_condition('(@asdf == 2.3.4.5)')
 
 @raises(pyparsing.ParseException)
 def test_parse_field_eq_ip_extra_garbage():
-    r._parse_binary_condition('@asdf == 2.3.4.5  ffff')
+    scape.registry._parse_binary_condition('@asdf == 2.3.4.5  ffff')
 
 @raises(pyparsing.ParseException)
 def test_parse_field_eq_unquoted():
-    r._parse_binary_condition("@asdf == asdf")
+    scape.registry._parse_binary_condition("@asdf == asdf")
 
 def test_parse_dim_eq_num():
-    r._parse_binary_condition(':dim == 23')
+    scape.registry._parse_binary_condition(':dim == 23')
 def test_parse_tag_eq_num():
-    r._parse_binary_condition('tag: == 23')
+    scape.registry._parse_binary_condition('tag: == 23')
 def test_parse_tagdim_eq_num():
-    r._parse_binary_condition('tag:dim == 23')
+    scape.registry._parse_binary_condition('tag:dim == 23')
 def test_parse_tags_eq_num():
-    r._parse_binary_condition("tag1:tag2 == 23")
+    scape.registry._parse_binary_condition("tag1:tag2 == 23")
 
 
 # Field Selectors ######################################################
 
 def test_parse_tagdim_field_list_fields1():
     def f(x):
-        res = r._parse_list_fieldselectors(x)
+        res = scape.registry._parse_list_fieldselectors(x)
         return res
     assert_equal( f("*"),[])
     assert_equal( f(""),[])
@@ -128,7 +128,7 @@ def test_parse_tagdim_field_list_fields1():
 
 @raises(pyparsing.ParseException)
 def test_bad_fieldselectors():
-    r._parse_list_fieldselectors("@categories == 'General'")
+    scape.registry._parse_list_fieldselectors("@categories == 'General'")
 
 
 # Table Metadata #######################################################
@@ -257,15 +257,15 @@ def test_or_leaves_map():
 
 @raises(ValueError)
 def test_or_condition0():
-    r._or_condition([])
+    scape.registry._or_condition([])
 
 def test_or_condition1():
     e = Equals(Field('x'), 2)
-    assert_equal( e , r._or_condition([e]))
+    assert_equal( e , scape.registry._or_condition([e]))
 
 def test_or_condition_many():
     cs = [Equals(Field('x'), 2), Equals('y', 3)]
-    assert_equal( cs , r._or_condition([cs]))
+    assert_equal( cs , scape.registry._or_condition([cs]))
 
 ### And
 
