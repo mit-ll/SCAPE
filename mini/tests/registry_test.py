@@ -1,7 +1,14 @@
 import re
 from nose.tools import *
 
-from scape.registry import *
+from scape.registry import (
+    dim, Dim, Tag, tag, tagsdim, TagsDim, Field, 
+    Registry, TableMetadata, DataSource,
+    Condition, BinaryCondition, GenericBinaryCondition, 
+    Equals, MatchesCond, And, Or,
+    GreaterThan, GreaterThanEqualTo,
+    TrueCondition, 
+)
 import scape.registry
 
 import pyparsing
