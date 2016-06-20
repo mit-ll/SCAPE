@@ -45,6 +45,15 @@ scape.splunklite module
     :show-inheritance:
 
 
+scape.sql module
+------------------
+
+.. automodule:: scape.sql
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 

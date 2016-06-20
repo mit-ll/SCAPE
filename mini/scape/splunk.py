@@ -1,5 +1,6 @@
 from __future__ import print_function
 from time import sleep
+import collections
 import json
 
 # 
@@ -114,7 +115,7 @@ def get_splunk_fields(service, index, max=30000, inclusion_percent=0.01):
     fields = synchronous_get(service, query, **kw)
     return {f['field']:f['count'] for f in fields}
 
-class SplunkResults():
+class SplunkResults(collections.Iterator):
     def __init__(self, job):
         self._job = job
 
@@ -146,6 +147,16 @@ class SplunkResults():
             return self.print_progress()
         return done
 
+    _iter = None
+    def __iter__(self):
+        if self._iter is None:
+            self._iter = self.iter(verbose=False)
+        return self._iter
+
+    def __next__(self):
+        return next(self._iter)
+    next = __next__
+    
     def iter(self, verbose=True):
         """An iterator of results"""
         while not self.is_done():
