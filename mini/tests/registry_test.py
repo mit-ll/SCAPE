@@ -359,7 +359,7 @@ class PythonDataSource(DataSource):
     def run(self, select):
         self.check_select(select)
 
-        field_names = self.field_names(select)
+        field_names = self._field_names(select)
         def proj(x):
             return {k:v for k, v in x.items() if k in field_names}
 
