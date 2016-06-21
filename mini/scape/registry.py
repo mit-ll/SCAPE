@@ -519,6 +519,27 @@ class DataSource(object):
             )
         return sorted(field_names)
 
+    def get_field_names(self, *tdims):
+        '''Given tagged dimensions, return list of field names that match
+
+        Args:
+          *tdims (*str): tagged dimensions as strings (e.g. "source:ip")
+
+        Examples:
+
+        >>> sqldata.get_field_names('source:ip','dest:ip')
+        ['src_ip', 'dst_ip']
+        >>> sqldata.get_field_names('ip','host')
+        ['src_ip', 'dst_ip', 'src_host', 'dst_host']
+
+        '''
+        fields = set()
+        for tdim in tdims:
+            fields.update(
+                self._metadata.fields_matching(scape.registry.tagsdim(tdim))
+            )
+        return [f.name for f in fields]
+    
     def check_select(self, select):
         '''Perform data source specific checks on the query'''
         return False
