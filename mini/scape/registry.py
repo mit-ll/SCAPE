@@ -233,7 +233,7 @@ class TableMetadata(object):
         if isinstance(selector, Field):
             return [Field(selector.name)] if selector.name in self._map else []
         elif isinstance(selector, TagsDim):
-            return [Field(f) for f, ftd in self._map.items()
+            return [Field(f) for f, ftd in sorted(self._map.items())
                     if self.tagsdim_matches(selector, Field(f))]
         else:
             raise ValueError("Expecting field or tagsdim")
@@ -244,11 +244,11 @@ class TableMetadata(object):
     @property
     def fields(self):
         """ Get the collection fields """
-        return [Field(f) for f in self._map.keys()]
+        return [Field(f) for f in self.field_names]
 
     @property
     def field_names(self):
-        return self._map.keys()
+        return sorted(self._map.keys())
 
     def __repr__(self):
         return repr(self._map)
@@ -609,9 +609,11 @@ class DataSource(object):
                 "Fields not present in datasource {}: {}".format(self.name, str(set(not_found))))
 
     def _rewrite(self, cond):
-        res = self._rewrite_tagsdim(cond)
-        res = self._rewrite_generic_binary_condition(res)
-        res = self._rewrite_outer_and(res)
+        res = self._rewrite_outer_and(
+            self._rewrite_generic_binary_condition(
+                self._rewrite_tagsdim(cond)
+            )
+        )
         self._check_fields(cond)
 #        print(res)
 #        return self._rewrite_outer_and(
