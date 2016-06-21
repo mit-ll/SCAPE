@@ -58,7 +58,7 @@ class SplunkDataSource(reg.DataSource):
     def _fields_pipe(self, select):
         fields_pipe = ""
         if select.fields:
-            field_names = self.field_names(select)
+            field_names = self._field_names(select)
             fields_pipe = "| fields " + ", ".join(field_names)
         return fields_pipe
 

@@ -233,7 +233,7 @@ class TableMetadata(object):
         if isinstance(selector, Field):
             return [Field(selector.name)] if selector.name in self._map else []
         elif isinstance(selector, TagsDim):
-            return [Field(f) for f, ftd in self._map.items()
+            return [Field(f) for f, ftd in sorted(self._map.items())
                     if self.tagsdim_matches(selector, Field(f))]
         else:
             raise ValueError("Expecting field or tagsdim")
@@ -244,11 +244,11 @@ class TableMetadata(object):
     @property
     def fields(self):
         """ Get the collection fields """
-        return [Field(f) for f in self._map.keys()]
+        return [Field(f) for f in self.field_names]
 
     @property
     def field_names(self):
-        return self._map.keys()
+        return sorted(self._map.keys())
 
     def __repr__(self):
         return repr(self._map)
@@ -462,7 +462,7 @@ class Select(object):
 
     def where(self, condition=None):
         condition = And([_parse_binary_condition(condition), self._condition])
-        copy = Select(self._data_source, self._fields, condition,
+        copy = Select(self._data_source, self.fields, condition,
                       **self._ds_kwargs)
         copy.check()
         return copy
@@ -505,13 +505,17 @@ class DataSource(object):
     def metadata(self):
         return self._metadata
 
+    @property
+    def all_field_names(self):
+        return sorted(self._metadata.field_names)
+
     def __repr__(self):
         return "DataSource({})".format(repr(self.name))
 
     def _repr_html_(self):
         return self._metadata._repr_html_()
 
-    def field_names(self, select):
+    def _field_names(self, select):
         field_names = set()
         for selector in select._fields:
             field_names.update(
@@ -519,6 +523,27 @@ class DataSource(object):
             )
         return sorted(field_names)
 
+    def get_field_names(self, *tdims):
+        '''Given tagged dimensions, return list of field names that match
+
+        Args:
+          *tdims (*str): tagged dimensions as strings (e.g. "source:ip")
+
+        Examples:
+
+        >>> sqldata.get_field_names('source:ip','dest:ip')
+        ['src_ip', 'dst_ip']
+        >>> sqldata.get_field_names('ip','host')
+        ['src_ip', 'dst_ip', 'src_host', 'dst_host']
+
+        '''
+        fields = set()
+        for tdim in tdims:
+            fields.update(
+                self._metadata.fields_matching(tagsdim(tdim))
+            )
+        return [f.name for f in fields]
+    
     def check_select(self, select):
         '''Perform data source specific checks on the query'''
         return False
@@ -588,9 +613,11 @@ class DataSource(object):
                 "Fields not present in datasource {}: {}".format(self.name, str(set(not_found))))
 
     def _rewrite(self, cond):
-        res = self._rewrite_tagsdim(cond)
-        res = self._rewrite_generic_binary_condition(res)
-        res = self._rewrite_outer_and(res)
+        res = self._rewrite_outer_and(
+            self._rewrite_generic_binary_condition(
+                self._rewrite_tagsdim(cond)
+            )
+        )
         self._check_fields(cond)
 #        print(res)
 #        return self._rewrite_outer_and(
@@ -678,8 +705,9 @@ def _binary_condition_p():
     return line
 
 def _parse_list_fieldselectors(fields):
-    if type(fields) is list:
+    if isinstance(fields, (list,tuple)):
         return fields
+        # return sum([_parse_list_fieldselectors(f) for f in fields], [])
     r = _list_tagdim_field_p().parseString(fields, parseAll=True).asList()
     if len(r) >= 1 and r[0] == '*':
         r = []
