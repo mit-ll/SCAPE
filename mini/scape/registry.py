@@ -505,6 +505,10 @@ class DataSource(object):
     def metadata(self):
         return self._metadata
 
+    @property
+    def all_field_names(self):
+        return sorted(self._metadata.field_names)
+
     def __repr__(self):
         return "DataSource({})".format(repr(self.name))
 
