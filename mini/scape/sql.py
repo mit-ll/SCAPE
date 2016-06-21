@@ -176,7 +176,7 @@ def _paren(args, sep):
     else:
         sep = ' {} '.format(sep)
         texts, params = zip(*args)
-        new_text = '(' + sep.join(args) + ')'
+        new_text = '(' + sep.join(texts) + ')'
         new_params = _merge_dicts(*params)
         return new_text, new_params
 
@@ -247,20 +247,27 @@ class SqlDataSource(scape.registry.DataSource):
 
         Returns:
 
-          sqlalchemy.sql.elements.TextClause: text clause for this Select
+          Tuple[str, Dict[str, Any]]: Tuple of SELECT statement (str)
+            and value parameters (Dict[str, Any])
 
         '''
         condition = self._rewrite(select.condition)
 
         text, params = _condition_to_where(condition)
         # potential SQL injection in field_names
-        fields = self.field_names(select)
+        fields = sorted(self._field_names(select))
 
-        statement = "SELECT {} FROM {} WHERE {}".format(
-            ','.join(fields) if fields else '*', self._table, text,
-        )
+        statement = (
+            "SELECT {fields} FROM {table} {where}".format(
+                fields=','.join(fields) if fields else '*',
+                table=self._table,
+                where='WHERE {}'.format(text) if text else '',
+            )
+        ).strip()
+
         _log.debug('sql statement: %s',statement)
         _log.debug('sql params: %s',params)
+
         return statement, params
 
     def run(self, select):
@@ -277,32 +284,19 @@ class SqlDataSource(scape.registry.DataSource):
 
         text = sqlalchemy.text(statement)
 
-        # return pandas.read_sql(text, self._engine, params=params)
-        return DataFrameResults(
-            self, pandas.read_sql(text, self._engine, params=params)
+        select_fields = set(self._field_names(select))
+        all_fields = set(self.all_field_names)
+        datetime_fields = (
+            set(self.get_field_names('datetime')) &
+            (select_fields if select_fields else all_fields)
         )
 
-    def get_fields(self, *tdims):
-        '''Given tagged dimensions, return list of field names that match
+        # return pandas.read_sql(text, self._engine, params=params)
+        return DataFrameResults(
+            self, pandas.read_sql(text, self._engine, params=params,
+                                  parse_dates=datetime_fields)
+        )
 
-        Args:
-          *tdims (*str): tagged dimensions as strings (e.g. "source:ip")
-
-        Examples:
-
-        >>> sqldata.get_fields('source:ip','dest:ip')
-        ['src_ip', 'dst_ip']
-        >>> sqldata.get_fields('ip','host')
-        ['src_ip', 'dst_ip', 'src_host', 'dst_host']
-
-        '''
-        fields = set()
-        for tdim in tdims:
-            fields.update(
-                self._metadata.fields_matching(scape.registry.tagsdim(tdim))
-            )
-        return [f.name for f in fields]
-    
 class DataFrameResults(collections.Iterator):
     '''Container for `DataFrame` results returned from
     :class:`SqlDataSource` object's `run` method
@@ -358,7 +352,7 @@ class DataFrameResults(collections.Iterator):
 
     def __getitem__(self, tdim):
         if isinstance(tdim, six.string_types):
-            fields = self._datasource.get_fields(tdim)
+            fields = self._datasource.get_field_names(tdim)
             return DataFrameResults(
                 self._datasource,
                 self.dataframe[fields],
@@ -375,14 +369,14 @@ class DataFrameResults(collections.Iterator):
                 # Assume that all elements of given dimension can be
                 # sensibly concatenated together into a single Pandas
                 # Series
-                fields = self._datasource.get_fields(tdim)
+                fields = self._datasource.get_field_names(tdim)
                 return pandas.concat([self.dataframe[f] for f in fields])
         else:
             # sequence key
             # 
             # return pandas DataFrameResults with subset of fields
             # based on tagged dimensions
-            fields = self._datasource.get_fields(*tdim)
+            fields = self._datasource.get_field_names(*tdim)
             return DataFrameResults(
                 self._datasource,
                 self.dataframe[fields],
