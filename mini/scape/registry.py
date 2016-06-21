@@ -462,7 +462,7 @@ class Select(object):
 
     def where(self, condition=None):
         condition = And([_parse_binary_condition(condition), self._condition])
-        copy = Select(self._data_source, self._fields, condition,
+        copy = Select(self._data_source, self.fields, condition,
                       **self._ds_kwargs)
         copy.check()
         return copy
@@ -511,7 +511,7 @@ class DataSource(object):
     def _repr_html_(self):
         return self._metadata._repr_html_()
 
-    def field_names(self, select):
+    def _field_names(self, select):
         field_names = set()
         for selector in select._fields:
             field_names.update(

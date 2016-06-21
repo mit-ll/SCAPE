@@ -56,7 +56,7 @@ class _SparkDataFrameDataSource(DataSource):
 
     def select_fields(self, df, select):
         if select.fields:
-            return df.select(self.field_names(select))
+            return df.select(self._field_names(select))
         else:
             return df
 
