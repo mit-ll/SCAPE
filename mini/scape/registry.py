@@ -536,7 +536,7 @@ class DataSource(object):
         fields = set()
         for tdim in tdims:
             fields.update(
-                self._metadata.fields_matching(scape.registry.tagsdim(tdim))
+                self._metadata.fields_matching(tagsdim(tdim))
             )
         return [f.name for f in fields]
     
@@ -699,8 +699,9 @@ def _binary_condition_p():
     return line
 
 def _parse_list_fieldselectors(fields):
-    if type(fields) is list:
+    if isinstance(fields, (list,tuple)):
         return fields
+        # return sum([_parse_list_fieldselectors(f) for f in fields], [])
     r = _list_tagdim_field_p().parseString(fields, parseAll=True).asList()
     if len(r) >= 1 and r[0] == '*':
         r = []
