@@ -379,6 +379,11 @@ class GreaterThan(BinaryCondition):
 class GreaterThanEqualTo(BinaryCondition):
     pass
 
+class LessThan(BinaryCondition):
+    pass
+
+class LessThanEqualTo(BinaryCondition):
+    pass
 
 class GenericBinaryCondition(BinaryCondition):
     '''Generic binary condition, not data source specific
