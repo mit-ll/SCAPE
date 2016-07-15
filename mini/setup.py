@@ -1,5 +1,7 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
+
 setup(name='scapemini',
       version='1.0',
-      packages=['scape'],
+      namespace_packages = ['scape'],
+      packages=['scape']
       )

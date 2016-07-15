@@ -1,4 +1,6 @@
-__all__ = [ "registry",
-            "functions",
-           "pandas",
-           "spark" ]
+#__all__ = [ "registry",
+#            "functions",
+#            "pandas",
+#            "spark" ]
+
+__import__('pkg_resources').declare_namespace(__name__)
