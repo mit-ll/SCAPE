@@ -77,6 +77,10 @@ def test_tagsdim_repr():
     t = tagsdim("tag1:dim")
     assert_equal( t , eval(repr(t)))
 
+def test_tagsdim_to_dict():
+    t = tagsdim("tag1:dim")
+    assert_equal({'tags':['tag1'], 'dim':'dim'}, t.to_dict())
+
 def test_parse_tagsdim():
     assert_equal( tagsdim(['tag1', 'dim']) , TagsDim(dim=Dim('dim'), tags=[Tag('tag1')]))
     assert_equal( tagsdim('dim') , TagsDim(dim=Dim('dim')))
@@ -388,6 +392,13 @@ def test_ds_repr():
 def test_ds_html():
     ds._repr_html_()
 
+def test_ds_fields():
+    assert_equal(sorted(['clientip','serverip','url','status_code','time']), ds.all_field_names)
+
+def test_ds_get_field_names():
+    assert_equal(sorted(['clientip','serverip']), sorted(ds.get_field_names(':ip')))
+    assert_equal(sorted(['clientip']), ds.get_field_names('client:'))
+
 # rewrite_generic_binary_condition
 
 def test_ds_remove_generic_binary_condition():
@@ -475,6 +486,12 @@ def test_select_copy():
     q2 = q.copy()
     # TODO __eq__ for select, need to account for attrs
 #    assert q == q2
+
+def test_select_inital_condition():
+    assert_equal(ds.select().condition, And([]))
+
+def test_select_ds_args():
+    ds.select(begin='now').ds_args
 
 def test_add_where():
     q = ds.select(':ip')
