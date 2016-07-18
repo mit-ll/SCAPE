@@ -41,7 +41,7 @@ class TagsDim(object):
         return hash((self.dim, self.tags))
 
     def to_dict(self):
-        return {'tags' : [t.name for t in self.tags], 'dim' : self.dim}
+        return {'tags' : [t.name for t in self.tags], 'dim' : self.dim._dim if self.dim else None }
 
     def _as_trs(self):
         r = ['<td>']
