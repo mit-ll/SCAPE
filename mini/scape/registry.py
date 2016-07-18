@@ -52,11 +52,6 @@ class TagsDim(object):
         r.append('</td>')
         return r
 
-def td(dim=None, *tags):
-    tags = [tag(t) for t in tags] if tags else []
-    return TagsDim(tags, _dim(dim))
-
-
 def tagsdim(td):
     if type(td) in (list, tuple):
         elements = td
