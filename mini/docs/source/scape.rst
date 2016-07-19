@@ -4,34 +4,17 @@ scape package
 Submodules
 ----------
 
-scape.functions module
-----------------------
+scape.registry module
+---------------------
 
-.. automodule:: scape.functions
+.. automodule:: scape.registry
     :members:
-    :undoc-members:
     :show-inheritance:
 
 scape.pandas module
 -------------------
 
 .. automodule:: scape.pandas
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-scape.registry module
----------------------
-
-.. automodule:: scape.registry
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-scape.spark module
-------------------
-
-.. automodule:: scape.spark
     :members:
     :undoc-members:
     :show-inheritance:

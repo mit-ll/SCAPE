@@ -41,6 +41,7 @@ class TagsDim(object):
         return hash((self.dim, self.tags))
 
     def to_dict(self):
+        """ Convert a TagsDim() to a dict. """
         return {'tags' : [t.name for t in self.tags], 'dim' : self.dim._dim if self.dim else None }
 
     def _as_trs(self):
@@ -53,6 +54,13 @@ class TagsDim(object):
         return r
 
 def tagsdim(td):
+    '''Create a TagsDim field selector.
+
+    Args:
+      td (str):  Colon separated string. The dimension is the string following the final colon. All other strings are tags.
+
+      td (list):  The dimension is the final string, preceding strings are tags.
+    '''
     if type(td) in (list, tuple):
         elements = td
     elif isinstance(td, string_types):
@@ -210,10 +218,7 @@ class TableMetadata(object):
         return (x.tags.issubset(y.tags)) and (dims_match)
 
     def tagsdim_matches(self, tagsdim, field):
-        """ Return true if `tagsdim` matches `field`.
-
-        TODO: Should this raise an exception on fields not included in the table metadata?
-        """
+        """ Return true if `tagsdim` matches `field`."""
         if field.name not in self._map:
             return False
         metadata_td = self._map[field.name]
