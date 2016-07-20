@@ -6,36 +6,52 @@ from six import string_types # python pos
 from collections import namedtuple
 
 class TagsDim(object):
-    """ A field selector containing any number of tags and an optional dimension.
-    """
+    '''A field selector containing any number of tags and an optional
+    dimension.
+
+    Args:
+
+      tags (List[Tag]): list of :class:`Tag` objects for a particular
+        field
+
+      dim (Dim): single :class:`Dim` object for a particular field
+
+    '''
     def __init__(self, tags=None, dim=None):
-        """ Create a TagsDim from an optional list of tags and an optional dimension. """
         if tags is None:
             tags = []
         for t in tags:
             if not isinstance(t, Tag):
-                raise ValueError("Expecting a Tag, not " + str(t) + ' ' + str(type(t)))
+                raise ValueError(
+                    "Expecting a Tag, not {} of type {}".format(t, type(t))
+                )
         if dim and not isinstance(dim, Dim):
-            raise ValueError("Expecting a Dim, not " + str(dim) + ' ' + str(type(dim)))
+            raise ValueError(
+                "Expecting a Dim, not {} of type {}".format(dim, type(dim))
+            )
         self._tags = frozenset(tags)
         self._dim = dim
 
     def __repr__(self):
         dstr = self._dim.__repr__() if self._dim else "None"
-        return "TagsDim(" + self._tags.__repr__() + ", " + dstr + ")"
+        return "TagsDim({}, {})".format(repr(self._tags), dstr)
 
     @property
     def tags(self):
-        """ The collection of tags"""
+        '''List of :class:`Tag` objects assocated with this TagsDim'''
         return self._tags
 
     @property
     def dim(self):
-        """ The dimension or None"""
+        '''The dimension or None'''
         return self._dim
 
     def __eq__(self, other):
-        return type(self) == type(other) and (self.tags == other.tags) and (self.dim == other.dim)
+        return (
+            (type(self) == type(other)) and
+            (self.tags == other.tags) and
+            (self.dim == other.dim)
+        )
 
     def __hash__(self):
         return hash((self.dim, self.tags))
@@ -53,25 +69,50 @@ class TagsDim(object):
         r.append('</td>')
         return r
 
-def tagsdim(td):
-    '''Create a TagsDim field selector.
+# def td(dim=None, *tags):
+#     '''Given a string dimension and a series of string tags, return a
+#     :class:`TagsDim` object
+# 
+#     Args:
+# 
+#       dim (str): 
+# 
+#     '''
+#     tags = [tag(t) for t in tags] if tags else []
+#     return TagsDim(tags, dim(dim))
+
+
+def tagsdim(tags_and_dim):
+    '''Given either a string or a list of strings representing a series of
+    tags and a dimension, return a :class:`TagsDim` object
 
     Args:
-      td (str):  Colon separated string. The dimension is the string following the final colon. All other strings are tags.
 
-      td (list):  The dimension is the final string, preceding strings are tags.
+      tags_and_dim (Union[str,List[str]]): either a string or a list
+        of strings encoding a sequence of (optional) tags and an
+        (optional) dimension
+
+    If given as a string, it should be in the form:
+
+    - ``"dim"`` (no tags and one dimension)
+    - ``"tag1:tag2:...:tagN:dim"`` (N tags and one dimension) or
+    - ``"tag1:tag2:...:tagN:"`` (N tags and no dimension)
+
     '''
-    if type(td) in (list, tuple):
-        elements = td
-    elif isinstance(td, string_types):
-        strd = td
+    if type(tags_and_dim) in (list, tuple):
+        elements = tags_and_dim
+    elif isinstance(tags_and_dim, string_types):
+        strd = tags_and_dim
         if ':' in strd:
             elements = strd.split(':')
         else:
             elements = [strd]
     else:
-        raise ValueError("Expecting string or list of strings, not " + str(td))
-    d = _dim(elements[-1].strip())
+        raise ValueError(
+            "Expecting string or list of strings, not {}"
+            " of type {}".format(tags_and_dim,type(tags_and_dim))
+        )
+    d = dim(elements[-1].strip())
     tags = []
     for rawtag in elements[:-1]:
         t = rawtag.strip()
@@ -82,7 +123,20 @@ def tagsdim(td):
 
 
 class Field(object):
-    """ The name of a field in a data source. """
+    '''The  name of a field/column/cell in a data source.
+
+    Fields represent the data-source-specific name for a particular
+    individual element of data. Examples are columns names in SQL
+    stores, cell names in NoSQL stores, etc.
+
+    In Scape, they are associated (via the :class:`TableMetadata`
+    object) with tags (semantic descriptors) and dimensions
+    (domain-specific data types). The goal being to allow analysts to
+    pose questions in terms of these tags and dimensions and have
+    those questions be transformed automatically into well-formed data
+    source queries.
+
+    '''
     def __init__(self, name):
         self._name = name
 
@@ -91,7 +145,7 @@ class Field(object):
 
     @property
     def name(self):
-        """ The name of the field """
+        ''' The name of the field '''
         return self._name
 
     def __eq__(self, other):
@@ -100,7 +154,24 @@ class Field(object):
     def __hash__(self):
         return hash(self.name)
 
+def field(f):
+    ''' Type routing function for field information
+    '''
+
+    if isinstance(f, string_types):
+        return Field(f)
+    elif isinstance(f, Field):
+        return f
+    else:
+        raise ValueError(
+            "Expecting str or Field object"
+            " not {} of type {}".format(f,type(f))
+        )
+        
+
 def _field_or_tagsdim(x):
+    ''' Type routing function for Field or TagDims information
+    '''
     if isinstance(x, string_types):
         if x.startswith("@"):
             return Field(x[1:])
@@ -113,17 +184,37 @@ def _field_or_tagsdim(x):
     elif type(x) in (list, tuple):
         return tagsdim(x)
     else:
-        raise ValueError("Expecting field, tagsdim, string or list of strings, not " + str(td))
+        raise ValueError(
+            "Expecting field, tagsdim, string or list of strings,"
+            " not {} of type {}".format(td,type(td))
+        )
 
 class Dim(object):
-    """ """
+    '''Domain-specific data types for fields
+
+    Dimensions are used in combination with tags (semantic
+    descriptors) to dereference fields (data-source specific column
+    names). Dimensions are similar in a sense to more traditional data
+    types (e.g. string, integer, float, etc.), but they are
+    domain-specifc and are primarily concerned with denoting relevance
+    to an analyst's frame of reference.
+
+    E.g. The field ``src_ip`` might be stored in a database as a
+    string (dotted quad) or as an integer (INET), but to an analyst,
+    it is an `IP` address. Furthermore, it represents the `source`
+    location of some network communication. So, in Scape, we might
+    give this field the dimension ``ip`` and the tag ``source``.
+
+    '''
     def __init__(self, d):
         if not isinstance(d, string_types):
-            raise ValueError("Expecting a string, not " + str(d))
+            raise ValueError(
+                "Expecting a string, not {} of type {}".format(d,type(d))
+            )
         self._dim = d
 
     def __repr__(self):
-        return "Dim(" + repr(self._dim) + ")"
+        return "Dim({})".format(repr(self._dim))
 
     def _repr_html_(self):
         return self._dim
@@ -134,7 +225,26 @@ class Dim(object):
     def __hash__(self):
         return hash(self._dim)
 
+    @property
+    def dim(self):
+        ''' The dimension name '''
+        return self._dim
+
 def dim(d):
+    '''Type routing/normalizing function for dimension objects
+
+    Args:
+
+      d (Union[ ``None`` , :class:`Dim` , ``str`` ]): dimension information
+        to return as either ``None`` or as a :class:`Dim` object
+
+    Returns:
+
+      None or ``Dim``: If ``None`` is provided. If a ``str`` is given, a
+        :class:`Dim` is returned. If a :class:`Dim` is provided, it is
+        returned directly.
+
+    '''
     if not d:
         return None
     if isinstance(d, Dim):
@@ -143,10 +253,27 @@ def dim(d):
         return Dim(d)
     else:
         raise ValueError("Expecting Dim, str, or None. Not " + str(d))
-_dim = dim
 
 class Tag(object):
-    """  """
+    '''Semantic descriptor for fields
+
+    Tags are used in combination with dimensions (domain-specific data
+    types) to dereference fields (data-source-specific element
+    names). Tags are used to describe the nature and purpose of the
+    domain-specifc type stored in the field.
+
+    E.g. The field ``src_ip`` might have the domain-specific data type
+    (i.e. dimension) of ``ip``, but equally important to an analyst is
+    that it represents the source of some network communication. That
+    semantic aspect of this field would connect it meaningfully to
+    other fields like ``src_port`` or ``src_AD_domain``.
+
+    So in addition to giving ``src_ip`` the dimension of ``ip``, we
+    could give it the tag ``source``. Thus, the analyst can look for
+    unique tuples of data associated with the tag ``source`` and the
+    above-mentioned fields would be provided.
+
+    '''
     def __init__(self, t):
         if not isinstance(t, string_types):
             raise ValueError("Expecting a string, not " + str(t) + " " + str(type(t)))
@@ -169,11 +296,28 @@ class Tag(object):
         return self._tag
 
 def tag(t):
+    '''Type routing/normalizing for tag objects
+
+    Args:
+
+      t (Union[ ``str`` , :class:`Tag` ]): tag information
+
+    Returns:
+
+      Tag: If ``str`` is given, a :class:`Tag` is created. If a
+        :class:`Tag` is given, it is returned directly.
+
+    '''
     return t if isinstance(t, Tag) else Tag(t)
 
 class TableMetadata(object):
     '''TableMetadata provides logic to map tag/dimension selectors to sets
     of fields.
+
+    Args:
+
+      field_to_tagsdim( Dict[str,Dict[str,Union[str,List[str]]]] ):
+        dictionary of field name to tag-and-dimention dictionary
 
     Example:
 
@@ -183,7 +327,8 @@ class TableMetadata(object):
     ...    'field3': { 'dim' : 'dim1' },
     ...    'field4': { } }
     ... )
-    >>> 
+    >>>
+
     '''
     def __init__(self, field_to_tagsdim):
         self._map = dict(self._from_map(field_to_tagsdim))
@@ -209,52 +354,106 @@ class TableMetadata(object):
         return "".join(res)
 
     def _tagsdim_subset(self, x, y):
-        """Return if the TagsDim `x` is compatible with `y`
+        '''Return if the TagsDim `x` is compatible with `y`
 
         x is compatible if it has no dimension or the same dimension
         as y and if y contains a subset of the tags of x.
-        """
+        '''
         dims_match = not x.dim or (y.dim and set([x.dim]).issubset(set([y.dim])))
         return (x.tags.issubset(y.tags)) and (dims_match)
 
     def tagsdim_matches(self, tagsdim, field):
-        """ Return true if `tagsdim` matches `field`."""
+        '''Return true if `tagsdim` matches `field`.
+
+        Args:
+
+          tagsdim (TagsDim): tagged dimension object to check
+
+          field (Field): field to check
+
+        TODO: Should this raise an exception on fields not included in
+        the table metadata?
+
+        '''
         if field.name not in self._map:
             return False
         metadata_td = self._map[field.name]
         return self._tagsdim_subset(tagsdim, metadata_td)
 
 #    def fields_matching(self, tagsdim):
-#        """Get the list of all fields matching `tagsdim`.
-#        """
+#        '''Get the list of all fields matching `tagsdim`.
+#        '''
 #        return [Field(f) for f, ftd in self._map.items()
 #            if self.tagsdim_matches(tagsdim, Field(f))]
 
     def fields_matching(self, selector):
+        '''Return list of :class:`Field` objects associated with a given
+        selector (:class:`Field` or :class:`TagsDim`) if it is
+        contained in this TableMetadata
+
+        If a :class:`Field` is provided, returns a list containing a
+        copy of that :class:`Field`.
+
+        If a :class:`TagsDim` is provided, returns a list of
+        :class:`Field` objects matching the tags and dimensions in the
+        :class:`TagsDim`
+
+        Args:
+
+          selector (Field or TagsDim): selector to check against the
+            TableMetadata
+
+        Returns:
+
+          List[Field]: list of :class:`Field` objects matching given
+            selector
+
+        '''
         if isinstance(selector, Field):
             return [Field(selector.name)] if selector.name in self._map else []
         elif isinstance(selector, TagsDim):
             return [Field(f) for f, ftd in sorted(self._map.items())
                     if self.tagsdim_matches(selector, Field(f))]
         else:
-            raise ValueError("Expecting field or tagsdim")
+            raise ValueError("Expecting Field or TagsDim")
 
     def has_field(self, f):
-        return f.name in self._map
+        '''Does this TableMetadata have the given :class:`Field`
+
+        Args:
+
+          f (Union[ str, Field ]): ``str`` field name or Field object
+
+        Returns
+
+          bool: whether this TableMetadata contains the given field
+
+        '''
+        return field(f).name in self._map
 
     @property
     def fields(self):
-        """ Get the collection fields """
+        '''List of :class:`Field` objects associated with this TableMetadata'''
         return [Field(f) for f in self.field_names]
 
     @property
     def field_names(self):
+        '''List of field names associated with this TableMetadata'''
         return sorted(self._map.keys())
 
     def __repr__(self):
         return repr(self._map)
 
-    def save_to_file(self, filename):
+    def save_to_json(self, filename):
+        ''' Save this TableMetadata to disk as JSON
+        '''
+        with open(filename, 'wt') as fp:
+            m = {f:self._map[f].to_dict() for f in self.field_names}
+            json.dump(m, fp, sort_keys=True, indent=4)
+
+    def save_to_yaml(self, filename):
+        ''' Save this TableMetadata to disk as YAML
+        '''
         with open(filename, 'wt') as fp:
             m = {f:self._map[f].to_dict() for f in self.field_names}
             json.dump(m, fp, sort_keys=True, indent=4)
