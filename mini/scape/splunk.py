@@ -3,11 +3,7 @@ from time import sleep
 import collections
 import json
 
-# 
-# BDO edits below to remove splunklib.results requirement
-# 
-# import splunklib.client as client
-# import splunklib.results as results
+import splunklib.results as results
 
 import scape.registry as reg
 
@@ -50,9 +46,9 @@ class SplunkDataSource(reg.DataSource):
                  'status_buckets',
                  'timeout']
         kwargs = {}
-        for o in dir(select):
-            if o in attrs:
-                kwargs[o] = getattr(select, o)
+        for k,v in select._ds_kwargs.items():
+            if k in attrs:
+                kwargs[k] = v
         return kwargs
 
     def _fields_pipe(self, select):
@@ -75,9 +71,12 @@ class SplunkDataSource(reg.DataSource):
         fields = self._fields_pipe(select)
         omitted_fields = self._pipe_omitted_fields(select)
         query = "search index={} {} {} {}".format(self._index, search_query, fields, omitted_fields)
+        kwargs = self._get_splunk_params(select)
         if debug:
+            print("kwargs=", kwargs)
             print("splunk_params=", self._get_splunk_params(select))
             print("condition=", select.condition)
+            print("search_query=", search_query)
             print("fields=", select.fields)
             print("omitted_fields=", omitted_fields)
             print("splunk query=[", query, "]")
@@ -164,20 +163,13 @@ class SplunkResults(collections.Iterator):
                 self.print_progress()
             sleep(2)
 
-        # 
-        # BDO: Didn't implement ResultsReader, couldn't see the point
-        # 
-        # rr = results.ResultsReader(self._job.results(count=0))
-        # for r in rr:
-        #     if isinstance(r, results.Message):
-        #         print(" {} {}".format(r.type, r.message))
-        #     elif isinstance(r, dict):
-        #         yield r
-        #         # print(r)
+        rr = results.ResultsReader(self._job.results(count=0))
+        for r in rr:
+            if isinstance(r, results.Message):
+                print(" {} {}".format(r.type, r.message))
+            elif isinstance(r, dict):
+                 yield r
 
-        for row in self._job.results(count=0):
-              yield row
-              
         self.cancel()
 
     def cancel(self):
@@ -194,19 +186,13 @@ def synchronous_get(service, query, **kwargs):
         print('.', end='')
         sleep(2)
 
-    # 
-    # BDO: Didn't implement ResultsReader, couldn't see the point
-    # 
-    # rr = results.ResultsReader(job.results(count=0))
-    # res = []
-    # for r in rr:
-    #     if isinstance(r, results.Message):
-    #         print(" {} {}".format(r.type, r.message))
-    #     elif isinstance(r, dict):
-    #         res.append(r)
-    #         # print(r)
-
-    res = list(self._job.results(count=0))
+    rr = results.ResultsReader(job.results(count=0))
+    res = []
+    for r in rr:
+        if isinstance(r, results.Message):
+            print(" {} {}".format(r.type, r.message))
+        elif isinstance(r, dict):
+            res.append(r)
     
     job.cancel()
     return res
