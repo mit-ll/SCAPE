@@ -466,12 +466,18 @@ class Select(object):
     def condition(self):
         return self._condition.copy()
 
-    def where(self, condition=None):
-        condition = And([_parse_binary_condition(condition), self._condition])
-        copy = Select(self._data_source, self.fields, condition,
-                      **self._ds_kwargs)
-        copy.check()
-        return copy
+    def where(self, condition=None, **kw_args):
+        if condition:
+            condition = And([_parse_binary_condition(condition), self._condition])
+        else:
+            condition = self._condition
+
+        new_kwargs = copy.deepcopy(self._ds_kwargs)
+        new_kwargs.update(kw_args)
+
+        select = Select(self._data_source, self.fields, condition, **new_kwargs)
+        select.check()
+        return select
 
     def with_fields(self, fields):
         return Select(self._data_source, fields, self._condition,
