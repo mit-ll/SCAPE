@@ -442,8 +442,8 @@ class Select(object):
         self._ds_kwargs = copy.deepcopy(ds_kwargs)
 
     def __repr__(self):
-        return "Select({!r}, {!r}, {!r})".format(
-            self._data_source, self._fields, self._condition, 
+        return "Select({!r}, {!r}, {!r}, {!r})".format(
+            self._data_source, self._fields, self._condition, self._ds_kwargs
         )
 
     def copy(self):
