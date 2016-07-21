@@ -227,6 +227,10 @@ def _go(cond):
         return _paren([_go(x) for x in cond.parts], 'OR')
     elif isinstance(cond, reg.And):
         return _paren([_go(x) for x in cond.parts], 'AND')
+    elif isinstance(cond, reg.TrueCondition):
+        return ""
+    else:
+        raise ValueError((cond,type(cond)))
 
 
 def _save_to_json(x, filename):
