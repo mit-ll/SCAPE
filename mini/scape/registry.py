@@ -705,7 +705,7 @@ class Select(object):
         ':class:`Condition` associated with this Select'
         return self._condition.copy()
 
-    def where(self, condition=None):
+    def where(self, condition=None, **kw_args):
         '''Match conditions for rows to be retured from the DataSource
 
         Args:
