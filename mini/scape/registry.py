@@ -1,41 +1,67 @@
-"""Scape Registry."""
+'''Registry of domain-specific knowledge about data sets
+
+XXXX
+
+'''
+from __future__ import absolute_import
+
 import copy
 import re
 import json
 from six import string_types # python pos
 from collections import namedtuple
 
+import scape.yaml
+
+import scape.yaml
+
 class TagsDim(object):
-    """ A field selector containing any number of tags and an optional dimension.
-    """
+    '''A field selector containing any number of tags and an optional
+    dimension.
+
+    Args:
+
+      tags (List[:class:`Tag`]): list of :class:`Tag` objects for a particular
+        field
+
+      dim (:class:`Dim`): single :class:`Dim` object for a particular field
+
+    '''
     def __init__(self, tags=None, dim=None):
-        """ Create a TagsDim from an optional list of tags and an optional dimension. """
         if tags is None:
             tags = []
         for t in tags:
             if not isinstance(t, Tag):
-                raise ValueError("Expecting a Tag, not " + str(t) + ' ' + str(type(t)))
+                raise ValueError(
+                    "Expecting a Tag, not {} of type {}".format(t, type(t))
+                )
         if dim and not isinstance(dim, Dim):
-            raise ValueError("Expecting a Dim, not " + str(dim) + ' ' + str(type(dim)))
+            raise ValueError(
+                "Expecting a Dim, not {} of type {}".format(dim, type(dim))
+            )
         self._tags = frozenset(tags)
         self._dim = dim
 
     def __repr__(self):
         dstr = self._dim.__repr__() if self._dim else "None"
-        return "TagsDim(" + self._tags.__repr__() + ", " + dstr + ")"
+        return "TagsDim({}, {})".format(repr(self._tags), dstr)
 
     @property
     def tags(self):
-        """ The collection of tags"""
+        '''List of :class:`Tag` objects assocated with this TagsDim'''
         return self._tags
 
     @property
     def dim(self):
-        """ The dimension or None"""
+        '''The dimension or None'''
         return self._dim
 
     def __eq__(self, other):
-        return type(self) == type(other) and (self.tags == other.tags) and (self.dim == other.dim)
+        return (
+            (type(self) == type(other)) and
+            (self.tags == other.tags) and
+            (self.dim == other.dim)
+        )
 
     def __hash__(self):
         return hash((self.dim, self.tags))
@@ -53,25 +79,50 @@ class TagsDim(object):
         r.append('</td>')
         return r
 
-def tagsdim(td):
-    '''Create a TagsDim field selector.
+# def td(dim=None, *tags):
+#     '''Given a string dimension and a series of string tags, return a
+#     :class:`TagsDim` object
+# 
+#     Args:
+# 
+#       dim (str): 
+# 
+#     '''
+#     tags = [tag(t) for t in tags] if tags else []
+#     return TagsDim(tags, dim(dim))
+
+
+def tagsdim(tags_and_dim):
+    '''Given either a string or a list of strings representing a series of
+    tags and a dimension, return a :class:`TagsDim` object
 
     Args:
-      td (str):  Colon separated string. The dimension is the string following the final colon. All other strings are tags.
 
-      td (list):  The dimension is the final string, preceding strings are tags.
+      tags_and_dim (Union[str,List[str]]): either a string or a list
+        of strings encoding a sequence of (optional) tags and an
+        (optional) dimension
+
+    If given as a string, it should be in the form:
+
+    - ``"dim"`` (no tags and one dimension)
+    - ``"tag1:tag2:...:tagN:dim"`` (N tags and one dimension) or
+    - ``"tag1:tag2:...:tagN:"`` (N tags and no dimension)
+
     '''
-    if type(td) in (list, tuple):
-        elements = td
-    elif isinstance(td, string_types):
-        strd = td
+    if type(tags_and_dim) in (list, tuple):
+        elements = tags_and_dim
+    elif isinstance(tags_and_dim, string_types):
+        strd = tags_and_dim
         if ':' in strd:
             elements = strd.split(':')
         else:
             elements = [strd]
     else:
-        raise ValueError("Expecting string or list of strings, not " + str(td))
-    d = _dim(elements[-1].strip())
+        raise ValueError(
+            "Expecting string or list of strings, not {}"
+            " of type {}".format(tags_and_dim,type(tags_and_dim))
+        )
+    d = dim(elements[-1].strip())
     tags = []
     for rawtag in elements[:-1]:
         t = rawtag.strip()
@@ -82,7 +133,20 @@ def tagsdim(td):
 
 
 class Field(object):
-    """ The name of a field in a data source. """
+    '''The  name of a field/column/cell in a data source.
+
+    Fields represent the data-source-specific name for a particular
+    individual element of data. Examples are columns names in SQL
+    stores, cell names in NoSQL stores, etc.
+
+    In Scape, they are associated (via the :class:`TableMetadata`
+    object) with tags (semantic descriptors) and dimensions
+    (domain-specific data types). The goal being to allow analysts to
+    pose questions in terms of these tags and dimensions and have
+    those questions be transformed automatically into well-formed data
+    source queries.
+
+    '''
     def __init__(self, name):
         self._name = name
 
@@ -91,7 +155,7 @@ class Field(object):
 
     @property
     def name(self):
-        """ The name of the field """
+        ''' The name of the field '''
         return self._name
 
     def __eq__(self, other):
@@ -100,7 +164,24 @@ class Field(object):
     def __hash__(self):
         return hash(self.name)
 
+def field(f):
+    ''' Type routing function for field information
+    '''
+
+    if isinstance(f, string_types):
+        return Field(f)
+    elif isinstance(f, Field):
+        return f
+    else:
+        raise ValueError(
+            "Expecting str or Field object"
+            " not {} of type {}".format(f,type(f))
+        )
+        
+
 def _field_or_tagsdim(x):
+    ''' Type routing function for Field or TagDims information
+    '''
     if isinstance(x, string_types):
         if x.startswith("@"):
             return Field(x[1:])
@@ -113,17 +194,37 @@ def _field_or_tagsdim(x):
     elif type(x) in (list, tuple):
         return tagsdim(x)
     else:
-        raise ValueError("Expecting field, tagsdim, string or list of strings, not " + str(td))
+        raise ValueError(
+            "Expecting field, tagsdim, string or list of strings,"
+            " not {} of type {}".format(td,type(td))
+        )
 
 class Dim(object):
-    """ """
+    '''Domain-specific data types for fields
+
+    Dimensions are used in combination with tags (semantic
+    descriptors) to dereference fields (data-source specific column
+    names). Dimensions are similar in a sense to more traditional data
+    types (e.g. string, integer, float, etc.), but they are
+    domain-specifc and are primarily concerned with denoting relevance
+    to an analyst's frame of reference.
+
+    E.g. The field ``src_ip`` might be stored in a database as a
+    string (dotted quad) or as an integer (INET), but to an analyst,
+    it is an `IP` address. Furthermore, it represents the `source`
+    location of some network communication. So, in Scape, we might
+    give this field the dimension ``ip`` and the tag ``source``.
+
+    '''
     def __init__(self, d):
         if not isinstance(d, string_types):
-            raise ValueError("Expecting a string, not " + str(d))
+            raise ValueError(
+                "Expecting a string, not {} of type {}".format(d,type(d))
+            )
         self._dim = d
 
     def __repr__(self):
-        return "Dim(" + repr(self._dim) + ")"
+        return "Dim({})".format(repr(self._dim))
 
     def _repr_html_(self):
         return self._dim
@@ -134,7 +235,26 @@ class Dim(object):
     def __hash__(self):
         return hash(self._dim)
 
+    @property
+    def dim(self):
+        ''' The dimension name '''
+        return self._dim
+
 def dim(d):
+    '''Type routing/normalizing function for dimension objects
+
+    Args:
+
+      d (Union[ ``None`` , :class:`Dim` , ``str`` ]): dimension information
+        to return as either ``None`` or as a :class:`Dim` object
+
+    Returns:
+
+      None or ``Dim``: If ``None`` is provided. If a ``str`` is given, a
+        :class:`Dim` is returned. If a :class:`Dim` is provided, it is
+        returned directly.
+
+    '''
     if not d:
         return None
     if isinstance(d, Dim):
@@ -143,10 +263,27 @@ def dim(d):
         return Dim(d)
     else:
         raise ValueError("Expecting Dim, str, or None. Not " + str(d))
-_dim = dim
 
 class Tag(object):
-    """  """
+    '''Semantic descriptor for fields
+
+    Tags are used in combination with dimensions (domain-specific data
+    types) to dereference fields (data-source-specific element
+    names). Tags are used to describe the nature and purpose of the
+    domain-specifc type stored in the field.
+
+    E.g. The field ``src_ip`` might have the domain-specific data type
+    (i.e. dimension) of ``ip``, but equally important to an analyst is
+    that it represents the source of some network communication. That
+    semantic aspect of this field would connect it meaningfully to
+    other fields like ``src_port`` or ``src_AD_domain``.
+
+    So in addition to giving ``src_ip`` the dimension of ``ip``, we
+    could give it the tag ``source``. Thus, the analyst can look for
+    unique tuples of data associated with the tag ``source`` and the
+    above-mentioned fields would be provided.
+
+    '''
     def __init__(self, t):
         if not isinstance(t, string_types):
             raise ValueError("Expecting a string, not " + str(t) + " " + str(type(t)))
@@ -169,21 +306,42 @@ class Tag(object):
         return self._tag
 
 def tag(t):
+    '''Type routing/normalizing for tag objects
+
+    Args:
+
+      t (Union[ ``str`` , :class:`Tag` ]): tag information
+
+    Returns:
+
+      Tag: If ``str`` is given, a :class:`Tag` is created. If a
+        :class:`Tag` is given, it is returned directly.
+
+    '''
     return t if isinstance(t, Tag) else Tag(t)
 
 class TableMetadata(object):
     '''TableMetadata provides logic to map tag/dimension selectors to sets
     of fields.
 
+    Args:
+
+      field_to_tagsdim( Dict[str,Dict[str,Union[str,List[str]]]] ):
+        dictionary of field name to tag-and-dimention dictionary
+
     Example:
 
-    >>> md = TableMetadata({
-    ...    'field1': { 'tags' : [ 'tag1', 'tag2' ], 'dim' : 'dim1' },
-    ...    'field2': { 'tags' : [ 'tag1', 'tag2' ] },
-    ...    'field3': { 'dim' : 'dim1' },
-    ...    'field4': { } }
-    ... )
-    >>> 
+        >>> md = TableMetadata({
+        ...    'field1': { 'tags' : [ 'tag1', 'tag2' ], 'dim' : 'dim1' },
+        ...    'field2': { 'tags' : [ 'tag1', 'tag2' ] },
+        ...    'field3': { 'dim' : 'dim1' },
+        ...    'field4': { } }
+        ... )
+        >>> md.fields_matching('tag1:')
+        [Field('field1'), Field('field2')]
+        >>> md.fields_matching('dim1')
+        [Field('field1'), Field('field3')]
+
     '''
     def __init__(self, field_to_tagsdim):
         self._map = dict(self._from_map(field_to_tagsdim))
@@ -209,55 +367,112 @@ class TableMetadata(object):
         return "".join(res)
 
     def _tagsdim_subset(self, x, y):
-        """Return if the TagsDim `x` is compatible with `y`
+        '''Return if the TagsDim `x` is compatible with `y`
 
         x is compatible if it has no dimension or the same dimension
         as y and if y contains a subset of the tags of x.
-        """
+        '''
         dims_match = not x.dim or (y.dim and set([x.dim]).issubset(set([y.dim])))
         return (x.tags.issubset(y.tags)) and (dims_match)
 
     def tagsdim_matches(self, tagsdim, field):
-        """ Return true if `tagsdim` matches `field`."""
+        '''Return true if `tagsdim` matches `field`.
+
+        Args:
+
+          tagsdim (:class:`TagsDim`): tagged dimension object to check
+
+          field (:class:`Field`): field to check
+
+        TODO: Should this raise an exception on fields not included in
+        the table metadata?
+
+        '''
         if field.name not in self._map:
             return False
         metadata_td = self._map[field.name]
         return self._tagsdim_subset(tagsdim, metadata_td)
 
 #    def fields_matching(self, tagsdim):
-#        """Get the list of all fields matching `tagsdim`.
-#        """
+#        '''Get the list of all fields matching `tagsdim`.
+#        '''
 #        return [Field(f) for f, ftd in self._map.items()
 #            if self.tagsdim_matches(tagsdim, Field(f))]
 
     def fields_matching(self, selector):
+        '''Return list of :class:`Field` objects associated with a given
+        selector (str, Field or :class:`TagsDim`) if it is
+        contained in this TableMetadata
+
+        If a Field is provided, returns a list containing a
+        copy of that Field.
+
+        If a TagsDim is provided, returns a list of
+        Field objects matching the tags and dimensions in the
+        TagsDim
+
+        Args:
+
+          selector (:class:`Field` or :class:`TagsDim`): selector to
+            check against the TableMetadata
+
+        Returns:
+
+          List[:class:`Field`]: list of Field objects matching given
+            selector
+
+        '''
         if isinstance(selector, Field):
             return [Field(selector.name)] if selector.name in self._map else []
         elif isinstance(selector, TagsDim):
             return [Field(f) for f, ftd in sorted(self._map.items())
                     if self.tagsdim_matches(selector, Field(f))]
+        elif isinstance(selector, string_types):
+            selector = _field_or_tagsdim(selector)
+            return self.fields_matching(selector)
         else:
-            raise ValueError("Expecting field or tagsdim")
+            raise ValueError("Expecting Field or TagsDim")
 
     def has_field(self, f):
-        return f.name in self._map
+        '''Does this TableMetadata have the given :class:`Field`
+
+        Args:
+
+          f (Union[ str, :class:`Field` ]): ``str`` field name or
+            Field object
+
+        Returns
+
+          bool: whether this TableMetadata contains the given field
+
+        '''
+        return field(f).name in self._map
 
     @property
     def fields(self):
-        """ Get the collection fields """
+        '''List of :class:`Field` objects associated with this TableMetadata'''
         return [Field(f) for f in self.field_names]
 
     @property
     def field_names(self):
+        '''List of field names (str) associated with this TableMetadata'''
         return sorted(self._map.keys())
 
     def __repr__(self):
         return repr(self._map)
 
-    def save_to_file(self, filename):
+    def save_to_json(self, filename):
+        ''' Save this TableMetadata to disk as JSON
+        '''
         with open(filename, 'wt') as fp:
             m = {f:self._map[f].to_dict() for f in self.field_names}
             json.dump(m, fp, sort_keys=True, indent=4)
+
+    def save_to_yaml(self, filename):
+        ''' Save this TableMetadata to disk as YAML
+        '''
+        m = {f:self._map[f].to_dict() for f in self.field_names}
+        scape.yaml.write_yaml(m, filename)
 
 def _create_table_field_tagsdim_map(m):
     if isinstance(m, TableMetadata):
@@ -268,6 +483,16 @@ def _create_table_field_tagsdim_map(m):
         raise ValueError("Expecting a dictionary, or TableMetadata, not " + str(type(m)))
 
 class Condition(object):
+    '''Base class for conditions in search phrases
+
+    Example:
+
+      >>> select = R.select('*').where('source:ip == "192.168.1.1"')
+    
+      ``'source:ip == "192.168.1.1"'`` is the search phrase,
+      corresponding to an :class:`Equals` condition
+
+    '''
     def copy(self):
         raise NotImplementedError('need to implement in subclass')
     
@@ -418,16 +643,28 @@ class GenericBinaryCondition(BinaryCondition):
                 and self.lhs == other.lhs and self.rhs == other.rhs)
 
 class Select(object):
-    '''Selection of :class:`Field` objects associated with a particular
+    '''Selection of fields from rows associated with a particular
     :class:`DataSource` possibly with match conditions for rows from
     data source
 
     Args:
 
-      data_source (DataSource): Subclass of :class:`DataSource` that
-        this selection is associated with.
+      data_source (:class:`DataSource`): Subclass of DataSource that this
+        selection is associated with.
 
-      fields (List[:class:`Field`]): 
+      fields (List[:class:`Field`]): List of Field objects
+        (e.g. columns in the case of SQL connections) to return from
+        DataSource
+
+      condition (:class:`Condition`): 
+
+      **ds_kwargs: keyword arguments to be passed to DataSource
+        (special db connection parameters, query configurations, etc.)
+        at query time
+
+    In most cases, users should _not_ create this class
+    directly. Instead, they should call the ``select`` method of the
+    DataSource in question.
 
     '''
     def __init__(self, data_source, fields=None, condition=None, **ds_kwargs):
@@ -452,7 +689,7 @@ class Select(object):
 
     @property
     def ds_args(self):
-        ''' :class:`DataSource`-specific keyword args for this selection
+        ''' DataSource-specific keyword args for this selection
         '''
         return namedtuple(
             'DataSourceArgs', sorted(self._ds_kwargs.keys())
@@ -460,13 +697,33 @@ class Select(object):
 
     @property
     def fields(self):
+        ''':class:`Field` objects associated with this Select'''
         return self._fields[:]
 
     @property
     def condition(self):
+        ':class:`Condition` associated with this Select'
         return self._condition.copy()
 
-    def where(self, condition=None, **kw_args):
+    def where(self, condition=None):
+        '''Match conditions for rows to be retured from the DataSource
+
+        Args:
+
+          condition (str): string representation of row match
+            conditions stated in terms of fields, tags and dimensions
+
+        Example:
+
+            >>> select = ds.select(['source:ip','dest:'])
+            >>> select192 = select.where('source:==192.168.*')
+            >>> iter192 = select192.run()
+            >>> list(iter192)
+            [{'s_ip': '192.168.1.5', 'd_ip': '59.223.1.83',
+              'd_domain': 'google.com'},
+             {'s_ip': '192.168.1.10', 'd_ip': '32.2.101.205',
+              'd_domain': 'facebook.com'}]
+        '''
         if condition:
             condition = And([_parse_binary_condition(condition), self._condition])
         else:
@@ -477,19 +734,20 @@ class Select(object):
 
         select = Select(self._data_source, self.fields, condition, **new_kwargs)
         select.check()
-        return select
 
+        return select
+    
     def with_fields(self, fields):
         return Select(self._data_source, fields, self._condition,
                       **self._ds_kwargs)
 
-    def check(self):
+    def check(self):            # XXXX need to add **ds_kwargs here
         return self._data_source.check_select(self)
 
-    def debug(self):
+    def debug(self):            # XXXX need to add **ds_kwargs here
         return self._data_source.debug_select(self)
 
-    def run(self):
+    def run(self):              # XXXX need to add **ds_kwargs here
         ''' Execute a query.
 
         Returns a data source specific object containing the results
@@ -498,13 +756,40 @@ class Select(object):
 
 
 class DataSource(object):
+    '''Model of data sources (i.e. databases, data stores) to be accessed
+    by analysts
+
+    Args:
+
+      metadata (:class:`TableMetadata`): TableMetadata mapping tag/dimension
+        selectors to sets of fields.
+
+      description (str): Short description of data source
+
+      op_dict (Dict[str, :class:`Condition`]): Dictionary mapping
+        infix operators to Condition types
+
+    Examples:
+
+        >>> ds = AddcSomeDbDataSource(
+        ...   metadata=TableMetadata({
+        ...    'field1': { 'tags' : [ 'tag1', 'tag2' ], 'dim' : 'dim1' },
+        ...    'field2': { 'tags' : [ 'tag1', 'tag2' ] },
+        ...    'field3': { 'dim' : 'dim1' },
+        ...    'field4': { }, 
+        ...   }),
+        ...   description='SomeDb storage of ADDC data',
+        ...   op_dict={
+        ...     '==': Equals,
+        ...     '<': LessThan,
+        ...     '<=': LessThanEqualTo,
+        ...   }
+        ... )
+        >>> select = ds.select('dim1').where('tag1: == "value*with*wcards"')
+        >>> rows = list(select)
+
+    '''
     def __init__(self, metadata, description, op_dict):
-        '''
-        Args:
-          metadata: Table metadata
-          description: Description
-          op_dict: Dictionary from infix operator name to Condition
-        '''
         self.description = description if description else ""
         self._metadata = metadata
         self._op_dict = op_dict
@@ -543,10 +828,10 @@ class DataSource(object):
 
         Examples:
 
-        >>> sqldata.get_field_names('source:ip','dest:ip')
-        ['src_ip', 'dst_ip']
-        >>> sqldata.get_field_names('ip','host')
-        ['src_ip', 'dst_ip', 'src_host', 'dst_host']
+            >>> sqldata.get_field_names('source:ip','dest:ip')
+            ['src_ip', 'dst_ip']
+            >>> sqldata.get_field_names('ip','host')
+            ['src_ip', 'dst_ip', 'src_host', 'dst_host']
 
         '''
         fields = set()
@@ -572,13 +857,20 @@ class DataSource(object):
         return Select(self, fields, condition, **ds_args)
 
     def _rewrite_generic_binary_condition(self, cond):
-        '''Replace generic binary conditions by data source specific binary conditions'''
+        '''Replace generic binary conditions by data source specific binary
+        conditions
+        
+        '''
         def rewrite(obj):
             if isinstance(obj, GenericBinaryCondition):
                 if obj.op in self._op_dict:
                     return self._op_dict[obj.op](obj.lhs, obj.rhs)
                 else:
-                    raise ValueError("Operator [{}] not supported by {}".format(obj.op, self.name))
+                    raise ValueError(
+                        "Operator [{}] not supported by {}".format(
+                            obj.op, self.name
+                        )
+                    )
             else:
                 return obj
         return cond.map_leaves(rewrite)
@@ -586,11 +878,17 @@ class DataSource(object):
     def _rewrite_tagsdim(self, cond):
         '''Replace tagsdim with fields'''
         def rewrite(obj):
-            if isinstance(obj, GenericBinaryCondition) and isinstance(obj.lhs, TagsDim):
+            if ( isinstance(obj, GenericBinaryCondition) and
+                 isinstance(obj.lhs, TagsDim) ):
                 fields = self._metadata.fields_matching(obj.lhs)
                 if not fields:
-                    raise ValueError("No fields matching {}".format(repr(obj.lhs)))
-                res = _or_condition([GenericBinaryCondition(f, obj.op, obj.rhs) for f in fields])
+                    raise ValueError(
+                        "No fields matching {}".format(repr(obj.lhs))
+                    )
+                res = _or_condition(
+                    [GenericBinaryCondition(f, obj.op, obj.rhs)
+                     for f in fields]
+                )
                 return res
             else:
                 return obj
@@ -622,7 +920,10 @@ class DataSource(object):
                 not_found.append(f.name)
         if not_found:
             raise ValueError(
-                "Fields not present in datasource {}: {}".format(self.name, str(set(not_found))))
+                "Fields not present in datasource {}: {}".format(
+                    self.name, str(set(not_found))
+                )
+            )
 
     def _rewrite(self, cond):
         res = self._rewrite_outer_and(
@@ -643,13 +944,14 @@ class Registry(dict):
     Args:
 
       data_sources (Dict[:class:`DataSource`])): dictionary from data
-        source names to :class:`DataSource` objects
+        source names to DataSource objects
 
     Example:
 
-    >>> registry = Registry( {
-    ... })
-    >>>
+        >>> registry = Registry( {
+        ... })
+        >>>
+
     '''
 
     def __init__(self, data_sources):
