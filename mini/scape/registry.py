@@ -13,6 +13,8 @@ from collections import namedtuple
 
 import scape.yaml
 
+import scape.yaml
+
 class TagsDim(object):
     '''A field selector containing any number of tags and an optional
     dimension.
