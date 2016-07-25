@@ -1,0 +1,10 @@
+six 
+pyparsing 
+requests
+coverage 
+nose 
+jupyter 
+pandas
+mock
+sqlalchemy
+
