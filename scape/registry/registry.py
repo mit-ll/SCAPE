@@ -1,12 +1,17 @@
 from __future__ import absolute_import
 
+import os
+
+from ..utils import merge_dicts
+from ..utils.yaml import read_yaml
+
 class Registry(dict):
     '''A collection of data sources.
 
     Args:
 
-      data_sources (Dict[:class:`DataSource`])): dictionary from data
-        source names to DataSource objects
+      data_sources (Dict[str, :class:`DataSource`])): dictionary
+        mapping data source names to DataSource objects
 
     Example:
 
@@ -35,3 +40,8 @@ class Registry(dict):
         return "".join(res)
 
 
+    @classmethod
+    def from_yaml(cls, *paths):
+        sources = merge_dicts(*[read_yaml(path) for path in paths])
+        return cls()
+        

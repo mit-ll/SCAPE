@@ -7,6 +7,7 @@ from .tag import Tag, tag
 from .dim import Dim, dim
 from .tagged_dim import TaggedDim
 from .utils import field_or_tagged_dim
+from ..utils.yaml import write_yaml
 
 class TableMetadata(object):
     '''TableMetadata provides logic to map tag/dimension selectors to sets
@@ -160,7 +161,7 @@ class TableMetadata(object):
         ''' Save this TableMetadata to disk as YAML
         '''
         m = {f:self._map[f].to_dict() for f in self.field_names}
-        scape.yaml.write_yaml(m, filename)
+        write_yaml(m, filename)
 
 def create_table_field_tagged_dim_map(m):
     if isinstance(m, TableMetadata):
