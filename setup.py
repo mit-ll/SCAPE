@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-setup(name='scapemini',
-      version='1.0',
-      namespace_packages = ['scape'],
-      packages=['scape']
-      )
+setup(
+    name='scape',
+    version='0.2.0',
+    packages=find_packages(),
+)
