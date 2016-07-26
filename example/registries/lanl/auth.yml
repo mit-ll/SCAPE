@@ -1,0 +1,63 @@
+table_metadata:
+  auth:
+    metadata:
+      time:
+        dim: datetime
+      source_user_at_domain:
+        tags:
+          - source
+        dim: user_at_domain
+      source_user:
+        tags:
+          - source
+        dim: user
+      source_domain:
+        tags:
+          - source
+        dim: domain
+      dest_user_at_domain:
+        tags:
+          - dest
+        dim: user_at_domain
+      dest_user:
+        tags:
+          - dest
+        dim: user
+      dest_domain:
+        tags:
+          - dest
+        dim: domain
+      source_computer:
+        tags:
+          - source
+        dim: host
+      dest_computer:
+        tags:
+          - dest
+        dim: host
+      authentication_type:
+        tags:
+          - auth
+        dim: type
+      logon_type:
+        tags:
+          - logon
+        dim: type
+      authentication_orientation:
+        tags:
+          - auth
+        dim: orient
+      success_or_failure:
+        tags:
+          - success
+          - failure
+        dim: outcome
+
+data_source:
+  auth1k_sqlite:
+    class: scape.sql.SqlDataSource
+    args:
+        engine: sqlite:///auth.1k.sqlite
+        table: auth
+        metadata: auth
+        description: "User authentication log data from LANL dataset"

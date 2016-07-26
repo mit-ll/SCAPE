@@ -237,6 +237,43 @@ class SqlDataSource(scape.registry.DataSource):
         })
         self._engine = engine
         self._table = table
+        self._name = 'SQLite:{}'.format(self._table)
+
+    @classmethod
+    def from_config(cls, name, config):
+        '''Create data source from configuration dictionary (usually created
+        from YAML files)
+
+        Args:
+
+          name (str): name (i.e. key) of data source in the
+            configuration object's `data_source` dictionary
+
+          config (Dict[str, Any]): configuration dictionary 
+
+        '''
+        
+        info = config['data_source'][name]
+        args = info['args']
+
+        engine = sqlalchemy.create_engine(args['engine'])
+
+        # Create TableMetadata
+        if isinstance(args['metadata'], six.string_types):
+            # Key in table_metadata dictionary of config
+            metadata = config['table_metadata'][args['metadata']]
+        else:
+            # Dictionary of table metadata
+            metadata = args['metadata']
+        metadata = scape.registry.TableMetadata(metadata)
+
+        table = args['table']
+        description = args.get('description','')
+
+        return cls(engine=engine, metadata=metadata, table=table,
+                   description=description)
+        
+        
 
     def _generate_statement(self, select):
         '''Given Select object, generate SELECT statement as SQLAlchemy text

@@ -21,12 +21,15 @@ from __future__ import absolute_import
 import pprint
 from collections import OrderedDict
 from copy import deepcopy
+import logging
 
-from scape.utils.log import new_log
+# from scape.utils.log import new_log
 
 __all__ = ['merge_dicts_ip','merge_dicts',]
 
-_log = new_log('scape.utils.builtins')
+# _log = new_log('scape.utils.builtins')
+_log = logging.getLogger('scape.utils.builtins')
+_log.addHandler(logging.NullHandler())
 
 def merge_dicts_ip(*dicts):
     '''Merge source dictionaries with dest dictionary **in place**
