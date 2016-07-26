@@ -23,6 +23,7 @@ import pandas.util.testing as ptesting
 
 import scape.registry as registry
 import scape.sql as sql
+from scape.registry.parsing import parse_binary_condition
 
 
 _log = logging.getLogger('test_sql')
@@ -93,7 +94,7 @@ class TestWildcardFunctions(unittest.TestCase):
         sql._ParamCreator.index = 0
         self.assertEqual(
             sql._condition_to_where(
-                registry._parse_binary_condition('@raw_column == 5')
+                parse_binary_condition('@raw_column == 5')
             ),
             ('(raw_column = :param_raw_column_0)', {'param_raw_column_0':5})
         )
@@ -101,7 +102,7 @@ class TestWildcardFunctions(unittest.TestCase):
         sql._ParamCreator.index = 0
         self.assertEqual(
             sql._condition_to_where(
-                registry._parse_binary_condition('@raw_column == "test"')
+                parse_binary_condition('@raw_column == "test"')
             ),
             ('(raw_column = :param_raw_column_0)',
              {'param_raw_column_0':'test'})
@@ -111,7 +112,7 @@ class TestWildcardFunctions(unittest.TestCase):
 
         self.assertEqual(
             sql._condition_to_where(
-                registry._parse_binary_condition('@raw_column == "test*"')
+                parse_binary_condition('@raw_column == "test*"')
             ),
             ('(raw_column LIKE :param_raw_column_0)',
              {'param_raw_column_0':'test%'})
@@ -119,7 +120,7 @@ class TestWildcardFunctions(unittest.TestCase):
 
         self.assertEqual(
             sql._condition_to_where(
-                registry._parse_binary_condition('@raw_column == "*test*"')
+                parse_binary_condition('@raw_column == "*test*"')
             ),
             ('(raw_column LIKE :param_raw_column_1)',
              {'param_raw_column_1':'%test%'})
