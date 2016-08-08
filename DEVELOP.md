@@ -18,7 +18,8 @@ These files are created with:
 To run unit tests:
 
 ```
-nosetests tests/registry_test.py
+source activate scape-py2 && nosetests tests/test_*.py
+source activate scape-py3 && nosetests tests/test_*.py
 ```
 
 To run tests with coverage:
