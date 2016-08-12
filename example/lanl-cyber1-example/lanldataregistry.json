@@ -1,0 +1,151 @@
+{  "auth": {
+      "id": {
+        "dim": "primarykey",
+        "tags": []
+      },
+      "time": {
+        "dim": "time",
+        "tags": ["seconds"]
+      },
+      "suser": {
+        "dim": "username",
+        "tags": ["src"]
+      },
+      "duser": {
+        "dim": "username",
+        "tags": ["dst"]
+      },
+      "shost": {
+        "dim": "hostname",
+        "tags": ["src"]
+      },
+      "dhost": {
+        "dim": "hostname",
+        "tags": ["dst"]
+      },
+      "authtype": {
+        "dim":"authtype",
+        "tags": []
+      },
+      "logontype": {
+        "dim": "logontype",
+        "tags": []
+      },
+      "authorient": {
+        "dim": "authorient",
+        "tags": []
+      },
+      "status": {
+        "dim": "status",
+        "tags": []
+      }
+   },
+   "proc": {
+      "id": {
+        "dim": "primarykey",
+        "tags": []
+      },
+      "time": {
+        "dim": "time",
+        "tags": ["seconds"]
+      },
+      "user": {
+        "dim": "username",
+        "tags": []
+      },
+      "host": {
+        "dim": "hostname",
+        "tags": []
+      },
+      "procname": {
+        "dim": "processname",
+        "tags": ["process"]
+      },
+      "startstop": {
+        "dim": "state",
+        "tags": ["process"]
+      }
+   },
+   "flows": {
+      "id": {
+        "dim": "primarykey",
+        "tags": []
+      },
+      "time": {
+        "dim": "time" ,
+        "tags": ["seconds"]
+      },
+      "duration": {
+        "dim": "timeduration",
+        "tags": ["seconds"]
+      },
+      "shost": {
+        "dim": "hostname",
+        "tags": ["src"]
+      },
+      "sport": {
+        "dim": "port",
+        "tags": ["src"]
+      },
+      "dhost": {
+        "dim": "hostname",
+        "tags": ["dst"]
+      },
+      "dport": {
+        "dim": "port",
+        "tags": ["dst"]
+      },
+      "protocol": {
+        "dim": "protocol",
+        "tags": ["ipv4"]
+      },
+      "pktcount": {
+        "dim": "packetcount",
+        "tags": ["packet","count"]
+      },
+      "bytecount": {
+        "dim": "bytecount",
+        "tags": ["byte","count"]
+      }
+   },
+   "dns": {
+      "id": {
+        "dim": "primarykey",
+        "tags": []
+      },
+      "time": {
+        "dim": "time",
+        "tags": ["seconds"]
+      },
+      "shost": {
+        "dim": "hostname",
+        "tags": ["src"]
+      },
+      "resolvedhost": {
+        "dim": "hostname",
+        "tags": ["dst","dnsresponse","dns"]
+      }
+   },
+   "redteam": {
+      "id": {
+        "dim": "primarykey",
+        "tags": []
+      },
+      "time": {
+        "dim": "time",
+        "tags": ["seconds"]
+      },
+      "user": {
+        "dim": "username",
+        "tags": ["src","badguy","villain","blackhat"]
+      },
+      "shost": {
+        "dim": "hostname",
+        "tags": ["src"]
+      },
+      "dhost": {
+        "dim": "hostname",
+        "tags": ["dst"]
+      }
+   }
+}
