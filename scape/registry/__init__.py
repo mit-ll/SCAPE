@@ -3,8 +3,6 @@
 '''
 from __future__ import absolute_import
 
-# from six import string_types # python pos
-
 from .tagged_dim import TaggedDim
 from .field import Field
 from .tag import Tag
