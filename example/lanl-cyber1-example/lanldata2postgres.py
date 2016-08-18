@@ -7,11 +7,12 @@
       23 May 2016  -  Alexia
       03 Aug 2016  -  Added column type introspection, check for existing data
       04 Aug 2016  -  Added proc, flows, dns, redteam classes
+      18 Aug 2016  -  Added a stuff "all" and print, mods for Py3, bugfixes
 
 """
 import time
 import sqlalchemy
-from sqlalchemy import Column, Integer, String, Numeric, DATETIME
+from sqlalchemy import Column, Integer, String, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -23,8 +24,15 @@ from sqlalchemy.orm import sessionmaker
 # format is sqlflavor://username:password@host:port/databasename
 
 global engine
-engine=sqlalchemy.create_engine( \
-       "postgresql://insertusername:insertpassword@localhost:5432/lanldb")
+myurl = sqlalchemy.engine.url.URL('postgresql',
+                                  username='########',
+                                  password="########",
+                                  host="localhost",
+                                  database="lanldb",
+                                  port=5432)
+                                 
+engine=sqlalchemy.create_engine( myurl )
+
 
 def setengine(newengine):
   """reset the global engine to point somewhere else"""
@@ -108,7 +116,7 @@ class dns(Base):
   resolvedhost = Column(String(50),nullable=True)
 
   def __repr__(self):
-    return "id='%d', time='%d', shost='%s', resolvedhost='%d'" \
+    return "id='%d', time='%d', shost='%s', resolvedhost='%s'" \
            % (self.id, self.time, self.shost, self.resolvedhost)
 
 class redteam(Base):
@@ -153,7 +161,9 @@ def create():
 
 def aretheretables():
   """Return list of existing tables"""
-  return [i.name for i in Base.metadata.tables.values()]
+  return engine.table_names();
+  # The next statement appears to always return values, even before create()
+  #return [i.name for i in Base.metadata.tables.values()] 
 
 def destroy():
   """drop tables in declarative base"""
@@ -167,6 +177,7 @@ def destroy():
   # Here is where we actually drop the tables
   Base.metadata.drop_all(engine)
 
+  session.commit()
   session.close()
   return
 
@@ -189,15 +200,15 @@ def stuff(datasourcefile,tablename,mintime=0, maxtime=20):
     uid=int(uid)+1
   except:
     uid=0
-  print 'Starting from uid: ',uid
+  print('Starting from uid: ',uid)
 
   #iterate through CSV file and ingest data between mintime and maxtime
   with open(datasourcefile,'r') as fp:
     #uid=0
     for line in fp:
         tokens=line.split(',')
-        if long(tokens[0]) > maxtime: break
-        if long(tokens[0]) >= mintime: 
+        if int(tokens[0]) > maxtime: break
+        if int(tokens[0]) >= mintime: 
            tokens.insert(0,uid)
            #Recast non-string columns to the correct data type
            for i in range(len(thesekeys)):
@@ -217,7 +228,67 @@ def stuff(datasourcefile,tablename,mintime=0, maxtime=20):
   session.commit()
   session.close()
 
-  print 'Data from',mintime,' to ',maxtime, ' took ', (time.time()-t0)/60., 'Minutes.'
+  print('Table data ', tablename,' from',mintime,' to ',maxtime, ' took ', (time.time()-t0)/60., 'Minutes.')
   return
           
+          
+def stuffallLANLdata(datadir,mintime=0,maxtime=20):
+    """
+    Stuffs all data (auth,proc,flows,dns,redteam) into the database
+    Arguments:
+    datadir: full path to directory containing unzipped LANL data
+    mintime: Minimum time stamp (seconds) for LANL data ingestion
+    maxtime: Maximum time stamp (seconds) for LANL data ingestion    
+    """
+    
+    #Check if the database has entries already; if not, create it
+    if not aretheretables():
+        print("Creating the SQL LANL database tables...")
+        create()    
+    else:
+        print("Note: Appending to existing SQL tables in database!")
+    
+    # Stuff all the data, assuming that the *.txt files are available
+    for key in tabledict.keys():
+        datafile = datadir + key + ".txt"
+        print("Stuffing data from ", datafile)
+        stuff(datafile, key, mintime, maxtime)
+              
+    return
+    
+    
+def printFirstRows(datadir=None):
+    """
+    Simple test to print the first row in each database
+    
+    datadir: full path to directory containing unzipped LANL data
+             (if present, prints first line of text for comparisons to SQL DB)
+    """
+    
+    # No use going any further if the database is empty
+    if not aretheretables():
+        print("No tables found in the database.")
+        return;
+    
+    #connect up a database session
+    Session=sessionmaker(bind=engine)
+    session=Session()
+
+    # Print a row for each key in the dictionary of tables
+    for key in tabledict:
+        print("First ", str.upper(key), " row is:")
+        row = session.query(tabledict[key]).first()
+        print(row)
+        # Upon user request, print the first line from the data source file
+        if datadir != None:
+            datafile = datadir + key + ".txt"
+            print("First line of ", datafile, " is:")
+            with open(datafile,'r') as df:
+                print(df.readline())
+                
+    # Clean up
+    session.close()    
+    
+    return;
+    
 

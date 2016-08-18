@@ -21,6 +21,8 @@ Step by Step Setup Instructions
 -------------------------------
 
 * Install the anaconda distribution of python, if you have no python.
+  You may need to execute "conda install psycopg2" if you run
+  into issues later (this will be apparent from the traceback). 
 
 * Download a copy of the Los Alamos dataset.  
   [LANL Dataset](http://csr.lanl.gov/data/cyber1/)
@@ -41,33 +43,51 @@ Step by Step Setup Instructions
 
 * Create an empty database to house your LANL data (I called mine lanldb).
 
-* In the directory SCAPE/example/lanl-cyber1-example
-  open the file lanldata2postgres.py, go to line beginning with "engine ="
+* In the directory SCAPE/example/lanl-cyber1-example,
+  open the file lanldata2postgres.py, find the line 
+  myurl = sqlalchemy.engine.url.URL('postgresql',
+                                     username='########',
+                                     password="########",
+                                     host="localhost",
+                                     database="lanldb","
+                                     port=5432)
   and modify this line to point to your own username, password, hostname 
-  (I used localhost), port, and database name.  
+  (I used localhost), port, and database type.  
 
-* Fire up an ipython shell.  Create the tables to store the LANL data by
-  running the command lanldata2postgres.create() .  Check that you succeeded
-  by running the command lanldata2postgres.aretheretables().
+* Open python session from this directory and type
+  import lanldata2postgres
+   or an ipython notebook and type
+   %load lanldata2postgres.py
 
-* Pretend your LANL data files live in a directory called Flatfiles.  One by one, 
-  unzip the LANL data files, and ingest them into your newly
-  minted tables using this command (the flows file in this example):
+* Pretend your LANL data files live in a directory called Flatfiles. If you
+  are able to unzip all of the files (auth.txt, dns.txt, flows.txt, proc.txt,
+  redteam.txt), then call:
+  > lanldata2postgres.stuffallLANLdata('Flatfiles',  maxtime=3600) 
+  to ingest the first hour of data (time is in seconds). Later, you can add 
+  mintime=3600, maxtime=7200 to get the next hour, etc.  
+   
+  If you cannot unzip all of the files at the same time due to space limitations,
+  then, for each unzipped file, call
   "lanldata2postgres.stuff('Flatfiles/flows.txt','flows', maxtime=3600)" .
-  The time is in seconds, so this command ingests an hour.  You can use 
-  mintime=3600, maxtime=7200 to get the next hour, etc.  When you are done, 
-  zip each file back up.  
+  When you are done, zip each file back up and move to the next one. 
+  
+  You can check whether you had success by calling
+  > lanldata2postgres.printFirstRows()
+  to see the first row in each database. If the files are still unzipped, you
+  can compare these rows to the first row of text in the files by calling 
+  > lanldata2postgres.printFirstRows('Flatfiles')
 
-* Note: the auth data will take a long time to zip/unzip, it's big. 
+* Note: the auth data will take a long time to zip/unzip; it's big. 
 
 * Now that your data is nicely ingested, it's time to play with SCAPE. First
   you must add the scape directory to your python path using this command (bash):
   "export PYTHONPATH=PathToScapeRepoHere:$PYTHONPATH"  Make sure there are not 
   spaces next to the =.  
 
-* Change into the directory SCAPE/example/lanl-cyber1-example.  fire up an 
-  ipython notebook (or jupyter notebook) by typing ipython notebook at the 
-  command line (or jupyter notebook)
+* Change into the directory SCAPE/example/lanl-cyber1-example.  Fire up the 
+  ipython notebook "ScapeOnLanlData.ipynb"  (or jupyter notebook) 
+  by typing "ipython notebook ScapeOnLanlData.ipynb" at the command line 
+  (or jupyter notebook) 
 
 * To run cells in this notebook, hit shift-enter.  Try running the cells.  
   Try writing new cells and evaluating them.  There are a few more examples
