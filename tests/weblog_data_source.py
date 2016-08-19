@@ -83,3 +83,13 @@ def get_weblog_ds():
     ds =  PythonDataSource(weblog_metadata, weblog_data)
     return ds
 
+def get_auth_ds():
+    ds = PythonDataSource(
+        TableMetadata({
+            'user': 'supplied:user',
+            'server': 'dst:ip',
+            'authserver': 'fqdn',
+            'time' : 'sec'
+        }), data=[])
+    ds._name = "auth"
+    return ds

@@ -4,7 +4,7 @@ from nose.tools import *
 
 from scape.registry.registry import Registry
 
-from weblog_data_source import get_weblog_ds
+from weblog_data_source import get_weblog_ds, get_auth_ds
 
 ds = get_weblog_ds()
 
@@ -34,4 +34,8 @@ def test_registry_has_html():
     assert_equal(1, len(act))
     act._repr_html_()
 
+
+def test_registry_alL_fields_html():
+    r = Registry({'testds':ds, 'auths': get_auth_ds()})
+    r.all_fields()._repr_html_()
 

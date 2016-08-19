@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from .parsing import parse_list_fieldselectors
+from collections import defaultdict as _ddict
 
 class Registry(dict):
     '''A collection of data sources.
@@ -34,6 +35,9 @@ class Registry(dict):
                 if ds._metadata.fields_matching(selector):
                     res[k]=ds
         return _Selection(res, selectors)
+
+    def all_fields(self):
+        return _FieldSelection(self)
 
     def _repr_html_(self):
         res = ['<table>']
@@ -91,4 +95,30 @@ class _Selection(Registry):
 
             data_source_html(ds.metadata)
         res.append('</table>\n')
+        return "".join(res)
+
+class _FieldSelection(Registry):
+    def _repr_html_(self):
+        res = ['<table>']
+        def th(*ts):
+            for t in ts:
+                res.extend(['<th>', t, '</th>'])
+        def c(*ts):
+            for t in ts:
+                res.extend(['<td>', t, '</t>'])
+        th('Field','Dim', 'Tags', 'Data Sources')
+        fields = _ddict(lambda: _ddict(lambda: set()))
+        for ds in self.values():
+            for f,td in ds.metadata._map.items():
+                td_to_ds = fields[f]
+                td_to_ds[(td.dim.name if td.dim else None, td.tags)].add(ds.name)
+        def tags(ts):
+            return ", ".join([t.name for t in ts])
+        for f in sorted(fields.keys()):
+            td_to_ds = fields[f]
+            for taggeddim,ds in td_to_ds.items():
+                res.extend('<tr>')
+                c(f, taggeddim[0], tags(taggeddim[1]), ", ".join(list(ds)))
+                res.extend('</tr>')
+        res.append('</table>')
         return "".join(res)
