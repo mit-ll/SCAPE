@@ -39,7 +39,7 @@ class Dim(object):
         return hash(self._dim)
 
     @property
-    def dim(self):
+    def name(self):
         ''' The dimension name '''
         return self._dim
 
