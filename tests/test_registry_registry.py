@@ -17,19 +17,21 @@ def test_html():
     r = Registry({'testds':ds})
     r._repr_html_()
 
-def test_datasources_has():
+def test_registry_has():
     r = Registry({'testds':ds})
     act = r.has('@clientip')
     assert_equal(1, len(act))
     assert_equal(ds, act['testds'])
 
-def test_datasources_has_nofield():
+def test_registry_has_nofield():
     r = Registry({'testds':ds})
     act = r.has('@NON_EXISTENT_FIELD')
     assert_equal(0, len(act))
 
-def test_datasources_has_html():
+def test_registry_has_html():
     r = Registry({'testds':ds})
     act = r.has('client:ip,url')
     assert_equal(1, len(act))
     act._repr_html_()
+
+
