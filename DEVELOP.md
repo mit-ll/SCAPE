@@ -26,9 +26,9 @@ To run tests with coverage:
 
 ```
 source activate scape-py2
-nosetests tests/registry_test.py --with-coverage --cover-erase --cover-html --cover-html-dir=cover-py2
+nosetests tests/test*.py --with-coverage --cover-package=scape --cover-erase --cover-html --cover-html-dir=cover-${CONDA_DEFAULT_ENV}
 
 source activate scape-py3
-nosetests tests/registry_test.py --with-coverage --cover-erase --cover-html --cover-html-dir=cover-py3
+nosetests tests/test*.py --with-coverage --cover-package=scape --cover-erase --cover-html --cover-html-dir=cover-${CONDA_DEFAULT_ENV}
 ```
 
