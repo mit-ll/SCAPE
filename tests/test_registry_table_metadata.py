@@ -40,6 +40,7 @@ def test_tagged_dim_matchs():
 
 def test_fields_matching():
     assert_equal( tm.fields_matching(Field('clientip')) , [Field('clientip')])
+    assert_equal( tm.fields_matching('@clientip') , [Field('clientip')])
     assert_equal( tm.fields_matching(tagged_dim(':ip')) , [Field('clientip')])
     assert_equal( tm.fields_matching(tagged_dim(':mac')) , [])
 
