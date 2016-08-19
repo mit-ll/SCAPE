@@ -29,9 +29,10 @@ class Registry(dict):
         '''
         selectors = parse_list_fieldselectors(field_selectors)
         res = {}
-        for k,v in self.items():
-            if any((v._metadata.fields_matching(selector) for selector in selectors)):
-                res[k]=v
+        for k,ds in self.items():
+            for selector in selectors:
+                if ds._metadata.fields_matching(selector):
+                    res[k]=ds
         return _Selection(res, selectors)
 
     def _repr_html_(self):
