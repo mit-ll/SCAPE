@@ -45,7 +45,7 @@ class Registry(dict):
             res.append('<tr>')
             td(k)
             td(ds.__class__.__name__)
-            td(ds.description)
+            td(ds.description if ds.description else '')
             res.append('</tr>')
         res.append('</table>')
         return "".join(res)
