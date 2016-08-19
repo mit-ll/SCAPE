@@ -5,7 +5,7 @@ from six import string_types
 from .field import Field, field
 from .tag import Tag, tag
 from .dim import Dim, dim
-from .tagged_dim import TaggedDim
+from .tagged_dim import TaggedDim, tagged_dim
 from .utils import field_or_tagged_dim
 
 class TableMetadata(object):
@@ -38,6 +38,8 @@ class TableMetadata(object):
         for (k, v) in m.items():
             if isinstance(v, TaggedDim):
                 yield (k, v)
+            elif isinstance(v, string_types):
+                yield (k, tagged_dim(v))
             else:
                 tags = [Tag(t) for t in (v['tags'] if 'tags' in v else [])]
                 dim = Dim(v['dim']) if 'dim' in v and v['dim'] else None
