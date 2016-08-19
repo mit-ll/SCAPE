@@ -121,6 +121,10 @@ class TableMetadata(object):
         else:
             raise ValueError("Expecting Field or TaggedDim")
 
+    def field_tagged_dim(self, f):
+        '''Get the set of a tagged dimension associated with a field, or None'''
+        return self._map.get(field(f).name, None)
+
     def has_field(self, f):
         '''Does this TableMetadata have the given :class:`Field`
 
