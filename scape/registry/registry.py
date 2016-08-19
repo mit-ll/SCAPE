@@ -19,6 +19,9 @@ class Registry(dict):
 
     def __init__(self, data_sources):
         self.update(data_sources)
+        for k,ds in self.items():
+            if ds.name == 'Unknown':
+                ds._name = k
 
     def has(self, field_selectors):
         '''
