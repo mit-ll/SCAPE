@@ -65,7 +65,7 @@ class TaggedDim(object):
         if self._dim:
             r.append(self._dim._repr_html_())
         r.append('</td><td>')
-        r.append("".join([t._repr_html_() for t in self._tags]))
+        r.append(",".join([t._repr_html_() for t in self._tags]))
         r.append('</td>')
         return r
 TagsDim = TaggedDim
