@@ -257,12 +257,14 @@ class SqlDataSource(scape.registry.DataSource):
         text, params = _condition_to_where(condition)
         # potential SQL injection in field_names
         fields = sorted(self._field_names(select))
-
+	print(select)
+	nresults = select._ds_kwargs['limit'] if 'limit' in select._ds_kwargs else None
         statement = (
-            "SELECT {fields} FROM {table} {where}".format(
+            "SELECT {fields} FROM {table} {where} {limit}".format(
                 fields=','.join(fields) if fields else '*',
                 table=self._table,
                 where='WHERE {}'.format(text) if text else '',
+                limit='LIMIT {}'.format(nresults) if nresults else '',
             )
         ).strip()
 
@@ -284,7 +286,7 @@ class SqlDataSource(scape.registry.DataSource):
         statement, params = self._generate_statement(select)
 
         text = sqlalchemy.text(statement)
-
+	
         select_fields = set(self._field_names(select))
         all_fields = set(self.all_field_names)
         datetime_fields = (
@@ -342,7 +344,7 @@ class DataFrameResults(collections.Iterator):
         def dict_iter():
             cols = list(self.dataframe.columns)
             for row in self.dataframe.itertuples():
-                yield {c:v for c,v in zip(cols,row)}
+                yield {c:v for c,v in zip(cols,row[1:])}
         if self._row_iter is None:
             self._row_iter = dict_iter()
         return self._row_iter
