@@ -39,3 +39,11 @@ def test_registry_alL_fields_html():
     r = Registry({'testds':ds, 'auths': get_auth_ds()})
     r.all_fields()._repr_html_()
 
+
+def test_registry_tags():
+    r = Registry({'testds':ds, 'auths': get_auth_ds()})
+    assert_equal(set(['supplied', 'dst', 'client', 'server', 'http']), r.tags)
+
+def test_registry_dims():
+    r = Registry({'testds':ds, 'auths': get_auth_ds()})
+    assert_equal(set(['ip','url','status_code','sec','user','ip','fqdn','sec']), r.dims)

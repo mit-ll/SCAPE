@@ -59,6 +59,16 @@ class DataSource(object):
     def all_field_names(self):
         return sorted(self._metadata.field_names)
 
+    @property
+    def tags(self):
+        '''Get the list of all tag names associated with some data source field.'''
+        return self._metadata.tags
+
+    @property
+    def dims(self):
+        '''Get the list of all dimension names associated with some data source field.'''
+        return self._metadata.dims
+
     def __repr__(self):
         return "DataSource({})".format(repr(self.name))
 

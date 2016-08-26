@@ -152,6 +152,16 @@ class TableMetadata(object):
         '''List of field names (str) associated with this TableMetadata'''
         return sorted(self._map.keys())
 
+    @property
+    def tags(self):
+        '''Get the tag names associated with some field.'''
+        return set((t.name for tds in self._map.values() for t in tds.tags))
+
+    @property
+    def dims(self):
+        '''Get the dimension names associated with some field.'''
+        return set((tds.dim.name for tds in self._map.values() if tds.dim))
+
     def __repr__(self):
         return repr(self._map)
 

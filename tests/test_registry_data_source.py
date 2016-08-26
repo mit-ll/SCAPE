@@ -105,4 +105,8 @@ def test_select_all():
 def test_check_fields():
     ds._check_fields(Equals(Field('a'), '1'))
 
+def test_tags():
+    assert_equal(set(['client','server','http']), ds.tags)
 
+def test_dims():
+    assert_equal(set(['ip','url','status_code','sec']), ds.dims)

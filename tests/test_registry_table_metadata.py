@@ -59,3 +59,8 @@ def test_properties():
 def test_repr():
     repr(tm) # no equality defined for table metadata
 
+def test_tags():
+    assert_equal(set(['client']), tm.tags)
+
+def test_dims():
+    assert_equal(set(['ip']), tm.dims)

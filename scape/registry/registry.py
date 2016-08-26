@@ -39,6 +39,16 @@ class Registry(dict):
     def all_fields(self):
         return _FieldSelection(self)
 
+    @property
+    def tags(self):
+        '''Get the tag names associated with some field in some registry data source.'''
+        return set((t for ds in self.values() for t in ds.tags))
+
+    @property
+    def dims(self):
+        '''Get the dimension names associated with some field in some registry data source.'''
+        return set((d for ds in self.values() for d in ds.dims))
+
     def _repr_html_(self):
         res = ['<table>']
         def td(d):
