@@ -28,12 +28,28 @@ class Registry(dict):
         '''
         Get the set of data sources containing a field selector.
         '''
+        return self.has_any(field_selectors)
+
+    def has_any(self, field_selectors):
+        '''
+        Get the set of data sources containing a field selector.
+        '''
         selectors = parse_list_fieldselectors(field_selectors)
         res = {}
         for k,ds in self.items():
-            for selector in selectors:
-                if ds._metadata.fields_matching(selector):
-                    res[k]=ds
+            if any((ds._metadata.fields_matching(selector) for selector in selectors)):
+                res[k]=ds
+        return _Selection(res, selectors)
+
+    def has_all(self, field_selectors):
+        '''
+        Get the set of data sources containing all field selectors.
+        '''
+        selectors = parse_list_fieldselectors(field_selectors)
+        res = {}
+        for k,ds in self.items():
+            if all((ds._metadata.fields_matching(selector) for selector in selectors)):
+                res[k]=ds
         return _Selection(res, selectors)
 
     def all_fields(self):

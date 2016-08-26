@@ -25,15 +25,26 @@ def test_registry_has():
 
 def test_registry_has_nofield():
     r = Registry({'testds':ds})
-    act = r.has('@NON_EXISTENT_FIELD')
+    act = r.has_any('@NON_EXISTENT_FIELD')
     assert_equal(0, len(act))
 
 def test_registry_has_html():
     r = Registry({'testds':ds})
-    act = r.has('client:ip,url')
+    act = r.has_any('client:ip,url')
     assert_equal(1, len(act))
     act._repr_html_()
 
+def test_registry_has_all():
+    r = Registry({'testds':ds})
+    act = r.has_all('client:ip,url')
+    assert_equal(1, len(act))
+    act._repr_html_()
+
+def test_registry_has_all_halffound():
+    r = Registry({'testds':ds})
+    act = r.has_all('client:ip,url,nonexistent_dim')
+    assert_equal(0, len(act))
+    act._repr_html_()
 
 def test_registry_alL_fields_html():
     r = Registry({'testds':ds, 'auths': get_auth_ds()})
