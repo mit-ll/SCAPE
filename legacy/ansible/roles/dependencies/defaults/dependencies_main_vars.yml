@@ -1,5 +1,0 @@
-# file: roles/dependencies/defaults/dependencies_main_vars.yml
-
-dependencies_root: "{{ pydist_root }}/dependencies"
-
-dependencies_reinstall: False

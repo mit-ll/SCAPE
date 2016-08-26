@@ -1,3 +1,0 @@
-# file: roles/anaconda/defaults/Darwin_anaconda_vars.yml
-
-pydist_installer_name: Anaconda-2.1.0-MacOSX-x86_64.sh

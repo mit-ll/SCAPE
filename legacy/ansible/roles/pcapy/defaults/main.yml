@@ -1,8 +1,0 @@
-# file: roles/pcapy/defaults/pcapy_main_vars.yml (main.yml)
-
-libpcap_tgz: "libpcap-1.5.3.tar.gz"
-libpcap_unarc: "{{ dependencies_root }}/libpcap-1.5.3"
-
-pcapy_pyext_tgz: "pcapy-0.10.3.tar.gz"
-pcapy_pyext_unarc: "{{ dependencies_root }}/pcapy-0.10.3"
-

@@ -1,6 +1,0 @@
-# file: roles/jcc/defaults/jcc_main_vars.yml (main.yml)
-
-jcc_pyext_tgz: "JCC-2.20.tar.gz"
-jcc_pyext_unarc: "{{ dependencies_root }}/JCC-2.20"
-
-jcc_jdk: "{{ java_home }}"

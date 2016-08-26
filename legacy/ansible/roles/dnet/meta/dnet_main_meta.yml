@@ -1,7 +1,0 @@
-# file: roles/dnet/meta/dnet_main_meta.yml (main.yml)
-
----
-dependencies:
-  - { role: common }
-  - { role: anaconda }
-  - { role: dependencies }

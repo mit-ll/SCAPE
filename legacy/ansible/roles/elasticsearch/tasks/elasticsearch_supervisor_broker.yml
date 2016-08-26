@@ -1,6 +1,0 @@
-# file: roles/elasticsearch/tasks/elasticsearch_supervisor_broker.yml
-
-- name: Elasticsearch | Install the supervisord elasticsearch script
-  template: src=etc_supervisor.d_elasticsearch.conf.j2 dest=/etc/supervisor.d/elasticsearch.conf owner=root group=root mode=0644
-  notify:
-    - restart supervisor

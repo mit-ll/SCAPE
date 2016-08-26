@@ -1,9 +1,0 @@
-# file: roles/ant/tasks/ant_main_tasks.yml (main.yml)
-
-- name: RedHat ant installer
-  include: ant_install_RedHat.yml
-  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CentOS'
-
-- name: RedHat ant installer
-  include: ant_install_Debian.yml
-  when: ansible_os_family == 'Debian' or ansible_os_family == 'Kali'
