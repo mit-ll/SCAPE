@@ -29,6 +29,9 @@ from scape.registry.parsing import parse_binary_condition
 _log = logging.getLogger('test_sql')
 _log.addHandler(logging.NullHandler())
 
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+
 class TestWildcardFunctions(unittest.TestCase):
     def test_has_escaped_wildcard(self):
         self.assertTrue(sql._has_escaped_wildcard('\*'))
@@ -293,7 +296,7 @@ class TestSqlDataSource(unittest.TestCase):
     def test_empty_select_run_all_data(self):
         sqlds = self.data_source()
 
-        all_df = sqlds.select().run().dataframe
+        all_df = sqlds.select().pandas()
         _log.debug(all_df.columns)
         _log.debug(all_df.dtypes)
         _log.debug(self.df.columns)
@@ -303,7 +306,7 @@ class TestSqlDataSource(unittest.TestCase):
     def test_ip_select_run_all_data(self):
         sqlds = self.data_source()
 
-        ip_df = sqlds.select('ip').run().dataframe
+        ip_df = sqlds.select('ip').pandas()
         ptesting.assert_frame_equal(
             ip_df,
             self.df[['dst_ip','src_ip']],
@@ -314,12 +317,12 @@ class TestSqlDataSource(unittest.TestCase):
         sqlds = self.data_source()
 
         ptesting.assert_frame_equal(
-            sqlds.select().where('ip == "192.168.1.1"').run().dataframe,
+            sqlds.select().where('ip == "192.168.1.1"').pandas(),
             self.df[self.df.dst_ip == '192.168.1.1'].reset_index(drop=True)
         )
 
         ptesting.assert_frame_equal(
-            sqlds.select().where('source:ip == "10.0.0.5"').run().dataframe,
+            sqlds.select().where('source:ip == "10.0.0.5"').pandas(),
             self.df[self.df.src_ip == '10.0.0.5'].reset_index(drop=True)
         )
         
@@ -327,12 +330,12 @@ class TestSqlDataSource(unittest.TestCase):
         sqlds = self.data_source()
 
         ptesting.assert_frame_equal(
-            sqlds.select().where('ip == "192.168.1.*"').run().dataframe,
+            sqlds.select().where('ip == "192.168.1.*"').pandas(),
             self.df[self.df.dst_ip.str.startswith('192.168.1')].reset_index(drop=True)
         )
 
         ptesting.assert_frame_equal(
-            sqlds.select().where('source:ip == "*.5"').run().dataframe,
+            sqlds.select().where('source:ip == "*.5"').pandas(),
             self.df[self.df.src_ip.str.endswith('.5')].reset_index(drop=True)
         )
         
@@ -340,12 +343,12 @@ class TestSqlDataSource(unittest.TestCase):
         sqlds = self.data_source()
 
         ptesting.assert_frame_equal(
-            sqlds.select('bytes').where('ip == "192.168.1.1"').run().dataframe,
+            sqlds.select('bytes').where('ip == "192.168.1.1"').pandas(),
             self.df[self.df.dst_ip == '192.168.1.1'].reset_index(drop=True)[['dst_bytes','src_bytes']]
         )
 
         ptesting.assert_frame_equal(
-            sqlds.select('bytes').where('source:ip == "10.0.0.5"').run().dataframe,
+            sqlds.select('bytes').where('source:ip == "10.0.0.5"').pandas(),
             self.df[self.df.src_ip == '10.0.0.5'].reset_index(drop=True)[['dst_bytes','src_bytes']]
         )
         
@@ -353,12 +356,12 @@ class TestSqlDataSource(unittest.TestCase):
         sqlds = self.data_source()
 
         ptesting.assert_frame_equal(
-            sqlds.select('bytes').where('ip == "192.168.1.*"').run().dataframe,
+            sqlds.select('bytes').where('ip == "192.168.1.*"').pandas(),
             self.df[self.df.dst_ip.str.startswith('192.168.1')].reset_index(drop=True)[['dst_bytes','src_bytes']]
         )
 
         ptesting.assert_frame_equal(
-            sqlds.select('bytes').where('source:ip == "*.5"').run().dataframe,
+            sqlds.select('bytes').where('source:ip == "*.5"').pandas(),
             self.df[self.df.src_ip.str.endswith('.5')].reset_index(drop=True)[['dst_bytes','src_bytes']]
         )
         

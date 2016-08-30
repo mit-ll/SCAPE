@@ -104,15 +104,15 @@ class DataSource(object):
             )
         return [f.name for f in fields]
     
-    def check_select(self, select):
+    def check_select(self, select, **kw_args):
         '''Perform data source specific checks on the query'''
         return False
 
-    def debug_select(self, select):
+    def debug_select(self, select, **kw_args):
         '''Print data source specific debug output for the query'''
         return False
 
-    def run(self, select):
+    def run(self, select, **kw_args):
         raise NotImplementedError('need to implement in subclass')
 
     def select(self, fields='*', condition=None, **ds_args):

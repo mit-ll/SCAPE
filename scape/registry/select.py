@@ -47,8 +47,16 @@ class Select(object):
         )
 
     def copy(self):
-        return Select(self._data_source, self._fields, self._condition,
+        return self._create(self._data_source, self._fields, self._condition,
                       **self._ds_kwargs)
+
+    def _create(self, data_source, fields=None, condition=None, **ds_kwargs):
+        '''Method to create a new selection of the same type as the
+        original. Must be overriden in subclasses and used for
+        instantiation in this class.
+        '''
+        return Select(data_source, fields, condition, **ds_kwargs)
+
 
     @property
     def ds_args(self):
@@ -95,26 +103,24 @@ class Select(object):
         new_kwargs = copy.deepcopy(self._ds_kwargs)
         new_kwargs.update(kw_args)
 
-        select = Select(self._data_source, self.fields, condition, **new_kwargs)
+        select = self._create(self._data_source, self.fields, condition, **new_kwargs)
         select.check()
 
         return select
     
     def with_fields(self, fields):
-        return Select(self._data_source, fields, self._condition,
+        return self._create(self._data_source, fields, self._condition,
                       **self._ds_kwargs)
 
-    def check(self):            # XXXX need to add **ds_kwargs here
-        return self._data_source.check_select(self)
+    def check(self, **kw_args):
+        return self._data_source.check_select(self, **kw_args)
 
-    def debug(self):            # XXXX need to add **ds_kwargs here
-        return self._data_source.debug_select(self)
+    def debug(self, **kw_args):
+        return self._data_source.debug_select(self, **kw_args)
 
-    def run(self):              # XXXX need to add **ds_kwargs here
+    def run(self, **kw_args):
         ''' Execute a query.
 
         Returns a data source specific object containing the results
         '''
-        return self._data_source.run(self)
-
-
+        return self._data_source.run(self, **kw_args)

@@ -15,6 +15,8 @@ import pandas
 import sqlalchemy
 
 import scape.registry
+from .registry.parsing import parse_binary_condition, parse_list_fieldselectors
+
 
 _log = logging.getLogger('scape.sql') # pylint: disable=invalid-name
 _log.addHandler(logging.NullHandler())
@@ -182,6 +184,32 @@ def _paren(args, sep):
         return new_text, new_params
 
 
+class SqlSelect(scape.registry.Select):
+    '''
+    '''
+    def __init__(self, data_source, fields=None, condition=None, **ds_kwargs):
+        super(SqlSelect, self).__init__(data_source, fields, condition, **ds_kwargs)
+
+    def _create(self, data_source, fields=None, condition=None, **ds_kwargs):
+        '''Method to create a new selection of the same type as the
+        original. Must be overriden in subclasses and used for
+        instantiation in this class.
+        '''
+        return SqlSelect(data_source, fields, condition, **ds_kwargs)
+
+    def pandas(self, **kw_args):
+        kw_args['out'] = 'pandas'
+        return self._data_source.run(self, **kw_args)
+
+    def list(self, **kw_args):
+        kw_args['out'] = 'list'
+        return self._data_source.run(self, **kw_args)
+
+    def iter(self, **kw_args):
+        kw_args['out'] = 'iter'
+        return self._data_source.run(self, **kw_args)
+
+
 class SqlDataSource(scape.registry.DataSource):
     '''SQL Data source
 
@@ -272,7 +300,11 @@ class SqlDataSource(scape.registry.DataSource):
 
         return statement, params
 
-    def run(self, select):
+    def select(self, fields='*', condition=None, **ds_args):
+        fields = parse_list_fieldselectors(fields)
+        return SqlSelect(self, fields, condition, **ds_args)
+
+    def run(self, select, **kw_args):
         '''run the selection operation
 
         Returns:
@@ -293,124 +325,16 @@ class SqlDataSource(scape.registry.DataSource):
             (select_fields if select_fields else all_fields)
         )
 
-        # return pandas.read_sql(text, self._engine, params=params)
-        return DataFrameResults(
-            self, pandas.read_sql(text, self._engine, params=params,
+        out = kw_args.get('out', 'pandas')
+
+        df = pandas.read_sql(text, self._engine, params=params,
                                   parse_dates=datetime_fields)
-        )
 
-class DataFrameResults(collections.Iterator):
-    '''Container for `DataFrame` results returned from
-    :class:`SqlDataSource` object's `run` method
-
-    Args:
-
-      datasource (SqlDataSource): SqlDataSource that produced these resultsq
-
-      dataframe (DataFrame): Pandas DataFrame produced by the
-        DataSource select operation
-
-    Examples:
-
-    >>> results = sqldata.select().where('dest:ip == '192.168.1.1').run()
-    >>> results['ip'].series
-    0 192.168.1.1
-    1 192.168.1.1
-    2 192.168.1.1
-    3 192.168.1.1
-    0 10.0.0.5
-    1 10.0.0.5
-    2 10.0.0.3
-    3 10.0.0.5
-    >>> results['ip'].series.unique()
-    array(['192.168.1.1','10.0.0.5','10.0.0.3'], dtype=object)
-    >>> results['ip'].dataframe.drop_duplicates()
-         src_ip        dst_ip
-    0  10.0.0.5   192.168.1.1
-    1  10.0.0.3   192.168.1.1
-    >>> results['source:ip'].series.unique()
-    array(['10.0.0.5','10.0.0.3'], dtype=object)
-    '''
-    def __init__(self, datasource, dataframe):
-        self._datasource = datasource
-        self.dataframe = dataframe
-
-    def iter(self):
-        return iter(self)
-
-    _row_iter = None
-    def __iter__(self):
-        def dict_iter():
-            cols = list(self.dataframe.columns)
-            for row in self.dataframe.itertuples():
-                yield {c:v for c,v in zip(cols,row[1:])}
-        if self._row_iter is None:
-            self._row_iter = dict_iter()
-        return self._row_iter
-
-    def __next__(self):
-        return next(self._row_iter)
-    next = __next__             # Python 2.7x 
-
-    def __getitem__(self, tdim):
-        if isinstance(tdim, six.string_types):
-            fields = self._datasource.get_field_names(tdim)
-            return DataFrameResults(
-                self._datasource,
-                self.dataframe[fields],
-            )
-            # string key
-            tagsdim = scape.registry.tagsdim(tdim)
-            if tagsdim.dim is None:
-                # No dimension given, only tags. Assume this will
-                # return multiple dimensions, so return
-                # DataFrameResults with subset of (multi-dimension)
-                # fields (via recursive call with list argument)
-                return self[[tdim]]
-            else:
-                # Assume that all elements of given dimension can be
-                # sensibly concatenated together into a single Pandas
-                # Series
-                fields = self._datasource.get_field_names(tdim)
-                return pandas.concat([self.dataframe[f] for f in fields])
+        if out == 'pandas':
+            return df
+        elif out == 'iter':
+            return df.to_dict(orient='record')
+        elif out == 'list':
+            return df.to_dict(orient='record')
         else:
-            # sequence key
-            # 
-            # return pandas DataFrameResults with subset of fields
-            # based on tagged dimensions
-            fields = self._datasource.get_field_names(*tdim)
-            return DataFrameResults(
-                self._datasource,
-                self.dataframe[fields],
-            )
-
-    @property
-    def series(self):
-        ''' return DataFrame flattened into single Series object
-
-        Examples:
-
-        >>> results = sqldata.select().where('dest:ip == '192.168.1.1').run()
-        >>> results['ip'].series
-        0 192.168.1.1
-        1 192.168.1.1
-        2 192.168.1.1
-        3 192.168.1.1
-        0 10.0.0.5
-        1 10.0.0.5
-        2 10.0.0.3
-        3 10.0.0.5
-        >>> results['ip'].series.unique()
-        array(['192.168.1.1','10.0.0.5','10.0.0.3'], dtype=object)
-        >>> results['source:ip'].series.unique()
-        array(['10.0.0.5','10.0.0.3'], dtype=object)
-        '''
-        columns = list(self.dataframe.columns)
-        return pandas.concat([self.dataframe[c] for c in columns])
-
-    # def drop_duplicates(self):
-    #     return DataFrameResults(self._datasource,
-    #                             self.dataframe.drop_duplicates())
-
-    # def unique(self):
-    #     return self.dataframe.drop_duplicates
+            raise ValueError('Unknown output format: {}'.format(out))
