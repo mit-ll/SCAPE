@@ -257,8 +257,7 @@ class SqlDataSource(scape.registry.DataSource):
         text, params = _condition_to_where(condition)
         # potential SQL injection in field_names
         fields = sorted(self._field_names(select))
-	print(select)
-	nresults = select._ds_kwargs['limit'] if 'limit' in select._ds_kwargs else None
+        nresults = select._ds_kwargs['limit'] if 'limit' in select._ds_kwargs else None
         statement = (
             "SELECT {fields} FROM {table} {where} {limit}".format(
                 fields=','.join(fields) if fields else '*',
