@@ -365,3 +365,9 @@ class TestSqlDataSource(unittest.TestCase):
             self.df[self.df.src_ip.str.endswith('.5')].reset_index(drop=True)[['dst_bytes','src_bytes']]
         )
         
+    def test_select_set(self):
+        sqlds = self.data_source()
+        ptesting.assert_frame_equal(
+            sqlds.select('bytes').where('ip == {192.168.1.10, 192.168.3.23}').pandas(),
+            self.df[(self.df.dst_ip == '192.168.1.10') | (self.df.dst_ip == '192.168.3.23')].reset_index(drop=True)[['dst_bytes','src_bytes']]
+        )

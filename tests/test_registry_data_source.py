@@ -5,7 +5,7 @@ from nose.tools import *
 from scape.registry.field import Field
 from scape.registry.tagged_dim import tagged_dim
 from scape.registry.condition import (
-    GenericBinaryCondition, Equals, TrueCondition, And, Or, 
+    GenericBinaryCondition, GenericSetCondition, Equals, TrueCondition, And, Or, 
 )
 from scape.registry.table_metadata import TableMetadata
 from scape.registry.data_source import DataSource
@@ -98,6 +98,23 @@ def test_and_rparen():
 
 def test_select_all():
     assert_equal( len(ds.select().run()) , len(weblog_data))
+
+
+# rewrite_generic_set_condition
+
+def test_rewrite_set():
+#    c = GenericSetCondition(Field('a'), '==', [])
+#    res = ds._rewrite_generic_set_condition(c)
+    assert_equal(TrueCondition(),
+                 ds._rewrite_generic_set_condition(GenericSetCondition(Field('a'), '==', [])))
+
+    assert_equal(GenericBinaryCondition(Field('a'),'==',"foo"),
+                 ds._rewrite_generic_set_condition(GenericSetCondition(Field('a'), '==', ["foo"])))
+
+    assert_equal(Or([GenericBinaryCondition(Field('a'),'==',"foo"),
+                     GenericBinaryCondition(Field('a'),'==',"bar")]),
+                 ds._rewrite_generic_set_condition(GenericSetCondition(Field('a'), '==', ["foo","bar"])))
+
 
 # check fields
 

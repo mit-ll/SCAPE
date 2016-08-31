@@ -163,3 +163,29 @@ class GenericBinaryCondition(BinaryCondition):
         return (type(self) == type(other) and self.op == other.op
                 and self.lhs == other.lhs and self.rhs == other.rhs)
 
+class GenericSetCondition(BinaryCondition):
+    '''Generic binary condition with multiple rhs values
+    '''
+    def __init__(self, lhs, op, rhs):
+        super(GenericSetCondition, self).__init__(lhs, rhs)
+        self._op = op
+
+    def copy(self):
+        return GenericSetCondition(self._lhs, self._op, self._rhs)
+
+    @property
+    def op(self):
+        return self._op
+
+    def __repr__(self):
+        return "GenericSetCondition({!r},{!r},{!r})".format(
+            self.lhs, self.op, self.rhs
+        )
+
+    def __hash__(self):
+        return hash((self._op, self.lhs, self.rhs)) 
+
+    def __eq__(self, other):
+        return (type(self) == type(other) and self.op == other.op
+                and self.lhs == other.lhs and self.rhs == other.rhs)
+

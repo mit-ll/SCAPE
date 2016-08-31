@@ -8,23 +8,55 @@ from scape.registry.field import Field
 from scape.registry.tag import Tag, tag
 from scape.registry.dim import Dim, dim
 from scape.registry.tagged_dim import TaggedDim, tagged_dim
-from scape.registry.condition import GenericBinaryCondition
+from scape.registry.condition import GenericBinaryCondition, GenericSetCondition
 from scape.registry.parsing import (
     parse_binary_condition, parse_list_fieldselectors, 
+    rhs_value_p, rhs_set_p, rhs_p
 )
+
+def test_parse_rhs():
+    assert_equal(rhs_value_p().parseString('23'), 23)
+    assert_equal(rhs_value_p().parseString('"FOO"'), "FOO")
+    assert_equal(rhs_value_p().parseString("'FOO'"), "FOO")
+    assert_equal(rhs_value_p().parseString('2.3'), 2.3)
+    assert_equal(rhs_value_p().parseString('1.2.3.4'), '1.2.3.4')
+
+def test_parse_rhs_set():
+    assert_equal([1,2,3], rhs_set_p().parseString('{1,2,3}')[:])
+
+def test_parse_rhs():
+    assert_equal(99, rhs_p().parseString('99')['value'])
+    assert_equal("FOO", rhs_p().parseString('"FOO"')['value'])
+    assert_equal([91,92,93], rhs_p().parseString('{91,92,93}')['valueset'][:][:])
+
 
 # Binary Condition #####################################################
 
 def test_parse_field_eq_num():
-    assert_equal( parse_binary_condition('@asdf == 23') , GenericBinaryCondition(Field('asdf'), '==', 23))
+    assert_equal( parse_binary_condition('@asdf == 23') ,
+                  GenericBinaryCondition(Field('asdf'), '==', 23))
 def test_parse_field_eq_float():
-    assert_equal( parse_binary_condition('@asdf == 2.03'), GenericBinaryCondition(Field('asdf'), '==', 2.03))
+    assert_equal( parse_binary_condition('@asdf == 2.03'),
+                  GenericBinaryCondition(Field('asdf'), '==', 2.03))
 def test_parse_field_eq_dblquote():
-    assert_equal( parse_binary_condition('@asdf == "asdf"'), GenericBinaryCondition(Field('asdf'), '==', "asdf"))
+    assert_equal( parse_binary_condition('@asdf == "asdf"'),
+                  GenericBinaryCondition(Field('asdf'), '==', "asdf"))
 def test_parse_field_eq_quote():
-    assert_equal( parse_binary_condition("@asdf == 'asdf'"), GenericBinaryCondition(Field('asdf'), '==', "asdf"))
+    assert_equal( parse_binary_condition("@asdf == 'asdf'"),
+                  GenericBinaryCondition(Field('asdf'), '==', "asdf"))
+def test_parse_field_eq_star_end():
+    assert_equal( parse_binary_condition('@asdf == "test*"'),
+                  GenericBinaryCondition(Field('asdf'), '==', "test*"))
+def test_parse_field_eq_star():
+    assert_equal( parse_binary_condition('@asdf == "*test*"'),
+                  GenericBinaryCondition(Field('asdf'), '==', "*test*"))
 def test_parse_field_eq_ip():
-    assert_equal( parse_binary_condition('@asdf == 2.3.4.5'), GenericBinaryCondition(Field('asdf'), '==', "2.3.4.5"))
+    assert_equal( parse_binary_condition('@asdf == 2.3.4.5'),
+                  GenericBinaryCondition(Field('asdf'), '==', "2.3.4.5"))
+
+def test_parse_rhs_valueset():
+    assert_equal(GenericSetCondition(Field('asdf'), '==', [91,92,93]),
+                 parse_binary_condition('@asdf == {91,92,93}'))
 
 # We don't yet support ()'s, ands, ors
 #def test_parse_field_eq_parens():
@@ -50,6 +82,9 @@ def test_parse_tagdim_eq_num():
 def test_parse_tags_eq_num():
     parse_binary_condition("tag1:tag2 == 23")
 
+
+def test_parse_set():
+    parse_binary_condition("@asdf == {1, 2, 3}")
 
 # Field Selectors ######################################################
 

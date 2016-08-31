@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from .condition import (
-    Or, or_condition, And, TrueCondition, GenericBinaryCondition,
+    Or, or_condition, And, TrueCondition, GenericBinaryCondition, GenericSetCondition
 )
 from .parsing import parse_list_fieldselectors
 from .select import Select
@@ -119,10 +119,27 @@ class DataSource(object):
         fields = parse_list_fieldselectors(fields)
         return Select(self, fields, condition, **ds_args)
 
+    def _rewrite_generic_set_condition(self, cond):
+        '''Return a disjunction of generic binary conditions, one for each 
+        value in the rhs of the generic set condition.
+        '''
+        def rewrite(obj):
+            if isinstance(obj, GenericSetCondition):
+                rhs = obj.rhs
+                rhs_len = len(rhs)
+                if rhs_len == 0:
+                    return TrueCondition()
+                elif rhs_len == 1:
+                    return GenericBinaryCondition(obj.lhs, obj.op, obj.rhs[0])
+                else:
+                    return Or([GenericBinaryCondition(obj.lhs, obj.op, rhs) for rhs in obj.rhs])
+            else:
+                return obj;
+        return cond.map_leaves(rewrite)
+
     def _rewrite_generic_binary_condition(self, cond):
         '''Replace generic binary conditions by data source specific binary
         conditions
-        
         '''
         def rewrite(obj):
             if isinstance(obj, GenericBinaryCondition):
@@ -150,6 +167,18 @@ class DataSource(object):
                     )
                 res = or_condition(
                     [GenericBinaryCondition(f, obj.op, obj.rhs)
+                     for f in fields]
+                )
+                return res
+            elif ( isinstance(obj, GenericSetCondition) and
+                   isinstance(obj.lhs, TaggedDim) ):
+                fields = self._metadata.fields_matching(obj.lhs)
+                if not fields:
+                    raise ValueError(
+                        "No fields matching {}".format(repr(obj.lhs))
+                    )
+                res = or_condition(
+                    [GenericSetCondition(f, obj.op, obj.rhs)
                      for f in fields]
                 )
                 return res
@@ -189,14 +218,10 @@ class DataSource(object):
             )
 
     def _rewrite(self, cond):
-        res = self._rewrite_outer_and(
-            self._rewrite_generic_binary_condition(
-                self._rewrite_tagged_dim(cond)
-            )
-        )
         self._check_fields(cond)
-#        print(res)
-#        return self._rewrite_outer_and(
-#            self._rewrite_generic_binary_condition(self._rewrite_tagged_dim(cond)))
-#        return self._rewrite_generic_binary_condition()
+        r1 = self._rewrite_tagged_dim(cond)
+
+        r2 = self._rewrite_generic_set_condition(r1)
+        r3 = self._rewrite_generic_binary_condition(r2)
+        res = self._rewrite_outer_and(r3)
         return res
