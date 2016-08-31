@@ -18,13 +18,13 @@ from scape.registry.parsing import (
 def test_parse_field_eq_num():
     assert_equal( parse_binary_condition('@asdf == 23') , GenericBinaryCondition(Field('asdf'), '==', 23))
 def test_parse_field_eq_float():
-    parse_binary_condition('@asdf == 2.03')
+    assert_equal( parse_binary_condition('@asdf == 2.03'), GenericBinaryCondition(Field('asdf'), '==', 2.03))
 def test_parse_field_eq_dblquote():
-    parse_binary_condition('@asdf == "asdf"')
+    assert_equal( parse_binary_condition('@asdf == "asdf"'), GenericBinaryCondition(Field('asdf'), '==', "asdf"))
 def test_parse_field_eq_quote():
-    parse_binary_condition("@asdf == 'asdf'")
+    assert_equal( parse_binary_condition("@asdf == 'asdf'"), GenericBinaryCondition(Field('asdf'), '==', "asdf"))
 def test_parse_field_eq_ip():
-    parse_binary_condition('@asdf == 2.3.4.5')
+    assert_equal( parse_binary_condition('@asdf == 2.3.4.5'), GenericBinaryCondition(Field('asdf'), '==', "2.3.4.5"))
 
 # We don't yet support ()'s, ands, ors
 #def test_parse_field_eq_parens():
@@ -39,11 +39,14 @@ def test_parse_field_eq_unquoted():
     parse_binary_condition("@asdf == asdf")
 
 def test_parse_dim_eq_num():
-    parse_binary_condition(':dim == 23')
+    assert_equal( parse_binary_condition(':dim == 23'),
+                  GenericBinaryCondition(TaggedDim(frozenset(), Dim('dim')), '==', 23))
+
 def test_parse_tag_eq_num():
     parse_binary_condition('tag: == 23')
 def test_parse_tagdim_eq_num():
-    parse_binary_condition('tag:dim == 23')
+    assert_equal( parse_binary_condition('tag:dim == 23'),
+                  GenericBinaryCondition(TaggedDim(frozenset([Tag('tag')]), Dim('dim')), '==', 23))
 def test_parse_tags_eq_num():
     parse_binary_condition("tag1:tag2 == 23")
 
