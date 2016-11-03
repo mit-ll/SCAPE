@@ -43,7 +43,7 @@ def rhs_p():
 
 def tagdim_field_p():
     td = Word(srange('[-_a-zA-Z0-9:]')).setResultsName('tagsdim')
-    f = Combine('@' + Word(srange('[_a-zA-Z]+'))).setResultsName('field')
+    f = Combine('@' + Word(srange('[_.a-zA-Z]+'))).setResultsName('field')
     parser = (f | td).setParseAction(
         lambda s, l, toks: field_or_tagged_dim(toks[0])
     )
