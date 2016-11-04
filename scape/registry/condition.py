@@ -26,12 +26,40 @@ class Condition(object):
     def map_leaves(self, f):
         return f(self)
 
+    def __and__(self,other):
+        if isinstance(other, TrueCondition):
+            return self
+        else:
+            return And([self,other])
+
+    def __or__(self, other):
+        if isinstance(other, TrueCondition):
+            return TrueCondition
+        return Or([self,other])
+
+    def __neg__(self):
+        return NotCondition(self)
+
+class NotCondition(Condition):
+    def __init__(self, cond):
+        self._cond = cond
+
+    def __neg__(self):
+        return self._cond
+
 class TrueCondition(Condition):
     def __init__(self):
         pass
 
+    def __and__(self, other):
+        return other
+
+    def __or__(self, other):
+        return self
+
     def __eq__(self, other):
         return type(self) == type(other)
+
 
 class ConstituentCondition(Condition):
     def __init__(self, parts):
@@ -79,6 +107,14 @@ def or_condition(parts):
     else:
         raise ValueError("Must have at least one condition in or")
 
+def and_condition(parts):
+    l = len(parts)
+    if l == 0:
+        return TrueCondition()
+    elif l == 1:
+        return parts[0]
+    elif len(parts) > 1:
+        return And(parts)
 
 class BinaryCondition(Condition):
     def __init__(self, lhs, rhs):
