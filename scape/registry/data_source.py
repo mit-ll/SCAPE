@@ -75,13 +75,19 @@ class DataSource(object):
     def _repr_html_(self):
         return self._metadata._repr_html_()
 
-    def _field_names(self, select):
+    def _expand_selectors(self, selectors):
+        '''Expand a set of field selectors into a set of fields
+        '''
         field_names = set()
-        for selector in select._fields:
+        for selector in selectors:
             field_names.update(
                 f.name for f in self._metadata.fields_matching(selector)
             )
         return sorted(field_names)
+
+    def _field_names(self, select):
+        '''Get the set of fields matching a selection'''
+        return self._expand_selectors(select._fields)
 
     def get_field_names(self, *tdims):
         '''Given tagged dimensions, return list of field names that match
