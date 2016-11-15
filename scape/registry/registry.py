@@ -26,13 +26,13 @@ class Registry(dict):
 
     def has(self, field_selectors):
         '''
-        Get the set of data sources containing a field selector.
+        Get the set of data sources containing any field selector.
         '''
         return self.has_any(field_selectors)
 
     def has_any(self, field_selectors):
         '''
-        Get the set of data sources containing a field selector.
+        Get the set of data sources containing any field selector.
         '''
         selectors = parse_list_fieldselectors(field_selectors)
         res = {}
@@ -52,7 +52,8 @@ class Registry(dict):
                 res[k]=ds
         return _Selection(res, selectors)
 
-    def all_fields(self):
+    @property
+    def fields(self):
         return _FieldSelection(self)
 
     @property
@@ -131,7 +132,7 @@ class _FieldSelection(Registry):
                 res.extend(['<th>', t, '</th>'])
         def c(*ts):
             for t in ts:
-                res.extend(['<td>', t, '</t>'])
+                res.extend(['<td>', t if t else '', '</t>'])
         th('Field','Dim', 'Tags', 'Data Sources')
         fields = _ddict(lambda: _ddict(lambda: set()))
         for ds in self.values():

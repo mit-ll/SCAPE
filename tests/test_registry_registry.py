@@ -48,7 +48,7 @@ def test_registry_has_all_halffound():
 
 def test_registry_alL_fields_html():
     r = Registry({'testds':ds, 'auths': get_auth_ds()})
-    r.all_fields()._repr_html_()
+    r.fields._repr_html_()
 
 
 def test_registry_tags():
