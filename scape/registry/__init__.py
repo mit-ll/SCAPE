@@ -27,7 +27,7 @@ from .dim import Dim
 from .table_metadata import TableMetadata
 from .condition import (
     Condition, TrueCondition, ConstituentCondition, 
-    And, Or, BinaryCondition, Equals, MatchesCond, GreaterThan,
+    And, Or, BinaryCondition, Equals, NotEqual, MatchesCond, GreaterThan,
     GreaterThanEqualTo, LessThan, LessThanEqualTo, GenericBinaryCondition
 )
 from .select import Select
