@@ -1,5 +1,7 @@
 CREATE DATABASE lanldb ;
 
+\c lanldb ;
+
 CREATE TABLE auth  (
   time       INTEGER,
   suser      VARCHAR(50),
