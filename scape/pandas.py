@@ -102,7 +102,7 @@ class _PandasDataFrameDataSource(DataSource):
     def run(self, select):
         cond = self._rewrite(select.condition)
         df = self.connect()
-        if isinstance(cond, reg.And) and not cond._parts:
+        if isinstance(cond, reg.TrueCondition) or (isinstance(cond, reg.And) and not cond._parts):
             return df
         else:
             v = self._go(cond)

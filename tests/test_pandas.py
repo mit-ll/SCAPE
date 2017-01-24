@@ -68,3 +68,7 @@ def test_pandas_and():
 def test_pandas_or():
     res = ds.select().where(C('age: <= 24') | C('@name == "Sasha"')).run()
     assert_equal (3, res.shape[0])
+
+def test_pandas_trivial():
+    res = ds.select().run()
+    assert_equal(4, res.shape[0])
