@@ -66,14 +66,17 @@ class _PandasDataFrameDataSource(DataSource):
         return newdf
 
     def _go(self, cond):
+        if not isinstance(cond, reg.Condition):
+            raise ValueError("Expecting condition, not " + str(cond))
         df = self.connect()
         if isinstance(cond, reg.And):
-            if len(cond._parts) == 1:
-                return self._go(cond._parts[0])
-            elif len(cond._parts)>1:
-                return functools.reduce(lambda x,y: self._go(x) & self._go(y), cond._parts)
-            else:
+            xs = cond._parts
+            if len(xs)==0:
                 raise ValueError("Empty And([])")
+            if len(xs) == 1:
+                return self._go(cond._parts[0])
+            elif len(xs)>1:
+                return functools.reduce(lambda x,y: x & self._go(y), xs[1:], self._go(xs[0]))
         elif isinstance(cond, reg.Or):
             xs = cond._parts
             if len(xs)==0:
@@ -81,7 +84,7 @@ class _PandasDataFrameDataSource(DataSource):
             elif len(xs)==1:
                 return self._go(xs[0])
             elif len(xs)>1:
-                return functools.reduce(lambda x,y: self._go(x) | self._go(y), xs)
+                return functools.reduce(lambda x,y: x | self._go(y), xs[1:], self._go(xs[0]))
         elif isinstance(cond, reg.Equals):
             return df[cond.lhs.name] == cond.rhs
         elif isinstance(cond, reg.NotEqual):
