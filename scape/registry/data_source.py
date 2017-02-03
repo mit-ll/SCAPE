@@ -126,7 +126,10 @@ class DataSource(object):
                 self._metadata.fields_matching(tagged_dim(tdim))
             )
         return [f.name for f in fields]
-    
+
+    def fields(self, *tdims):
+        return self.get_field_names(*tdims)
+
     def check_select(self, select, **kw_args):
         '''Perform data source specific checks on the query'''
         return False
