@@ -38,15 +38,12 @@ def datasource(readerf, metadata, description=None):
     elif isinstance(readerf, pandas.core.frame.DataFrame):
         return _PandasDataFrameDataSource(lambda:readerf, md, description)
 
-class _MatchesCond(reg.BinaryCondition):
-    pass
-
 _pandas_op_dict = {
     '==': reg.Equals,
     '!=': reg.NotEqual,
     '>': reg.GreaterThan,
     '>=': reg.GreaterThanEqualTo,
-    '=~':  _MatchesCond,
+    '=~':  reg.MatchesCond,
    '<': reg.LessThan,
    '<=': reg.LessThanEqualTo
 }
@@ -97,19 +94,27 @@ class _PandasDataFrameDataSource(DataSource):
             return df[cond.lhs.name] < cond.rhs
         elif isinstance(cond, reg.LessThanEqualTo):
             return df[cond.lhs.name] <= cond.rhs
-        elif isinstance(cond, _MatchesCond):
+        elif isinstance(cond, reg.MatchesCond):
             return df[cond.lhs.name].str.contains(cond.rhs)
         else:
             raise ValueError("Unexpected type {}".format(str(type(cond))))
+
+
+    def _select_fields(self, df, select):
+        if select.fields:
+            return df[self._field_names(select)]
+        else:
+            return df
 
     def run(self, select):
         cond = self._rewrite(select.condition)
         df = self.connect()
         if isinstance(cond, reg.TrueCondition) or (isinstance(cond, reg.And) and not cond._parts):
-            return df
+            pass
         else:
             v = self._go(cond)
-            return df[v]
+            df = df[v]
+        return self._select_fields(df, select)
 
     def check_select(self, select):
         pass
