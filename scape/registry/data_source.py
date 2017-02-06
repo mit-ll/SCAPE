@@ -23,7 +23,7 @@ from .condition import (
 from .parsing import parse_list_fieldselectors
 from .select import Select
 from .tagged_dim import TaggedDim, tagged_dim
-from .field import Field, field
+from .utils import field_or_tagged_dim
 
 class DataSource(object):
     '''Model of data sources (i.e. databases, data stores) to be accessed
@@ -121,11 +121,15 @@ class DataSource(object):
 
         '''
         fields = set()
+        res = []
+        # Return the fields in the order of selectors
         for tdim in tdims:
-            fields.update(
-                self._metadata.fields_matching(tagged_dim(tdim))
-            )
-        return [f.name for f in fields]
+            matching = self._metadata.fields_matching(field_or_tagged_dim(tdim))
+            for m in matching:
+                if m not in fields:
+                    res.append(m.name)
+            fields.update(matching)
+        return res
 
     def fields(self, *tdims):
         return self.get_field_names(*tdims)
