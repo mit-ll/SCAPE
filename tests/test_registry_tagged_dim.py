@@ -52,3 +52,6 @@ def test_parse_tagged_dim():
     assert_equal( tagged_dim('tag1:dim') , TaggedDim(dim=Dim('dim'), tags=[Tag('tag1')]))
     assert_equal( tagged_dim('tag1:tag2:dim') , TaggedDim(dim=Dim('dim'), tags=[Tag('tag1'), Tag('tag2')]))
 
+def test_parse_field():
+    print(tagged_dim('@Field'))
+    # assert_equal( tagged_dim('@field'), Field('f'))

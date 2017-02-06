@@ -138,5 +138,5 @@ def tagged_dim(tags_and_dim):
             tag = Tag(t)
             tags.append(tag)
     return TaggedDim(tags=tags, dim=d)
-tagsdim = tagged_dim
 
+tagsdim = tagged_dim
