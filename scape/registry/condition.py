@@ -170,6 +170,9 @@ class BinaryCondition(Condition):
 class Equals(BinaryCondition):
     pass
 
+class NotEqual(BinaryCondition):
+    pass
+
 class MatchesCond(BinaryCondition):
     pass
 

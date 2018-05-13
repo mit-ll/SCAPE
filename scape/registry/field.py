@@ -54,9 +54,8 @@ class Field(object):
 def field(f):
     ''' Type routing function for field information
     '''
-
-    if isinstance(f, string_types):
-        return Field(f)
+    if f and isinstance(f, string_types):
+        return Field(f.replace('@',''))
     elif isinstance(f, Field):
         return f
     else:
@@ -64,4 +63,3 @@ def field(f):
             "Expecting str or Field object"
             " not {} of type {}".format(f,type(f))
         )
-        

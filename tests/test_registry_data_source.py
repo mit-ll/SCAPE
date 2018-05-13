@@ -144,3 +144,7 @@ def test_tags():
 
 def test_dims():
     assert_equal(set(['ip','url','status_code','sec']), ds.dims)
+
+def test_has_fields():
+    assert_equal(ds.get_field_names('ip'), ['clientip','serverip'])
+    assert_equal(ds.get_field_names('@serverip','http:url'), ['serverip','url'])

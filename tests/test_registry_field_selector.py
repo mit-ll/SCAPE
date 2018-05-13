@@ -18,17 +18,19 @@
 import re
 from nose.tools import *
 
-from scape.registry.field import Field, field
+from scape.registry.field import Field
+from scape.registry.tagged_dim import tagged_dim, TaggedDim
+from scape.registry.utils import field_or_tagged_dim
 
-# Field ################################################################
+def test_field_selector():
+    assert_equal( field_or_tagged_dim(' @f '), Field('f'))
+    assert_equal(field_or_tagged_dim(Field('f')), Field('f'))
 
-def test_field_repr():
-    r = Field('f')
-    assert_equal( r , eval(repr(r)))
+    assert_equal( field_or_tagged_dim('tag:dim'), tagged_dim('tag:dim'))
+    assert_equal( field_or_tagged_dim(['tag','dim']), tagged_dim('tag:dim'))
+
+    assert_equal( field_or_tagged_dim(tagged_dim('tag:dim')), tagged_dim('tag:dim'))
 
 @raises(ValueError)
-def test_field_empty():
-    field('')
-
-def test_field_strips_at():
-    assert_equal(field('@f'), Field('f'))
+def test_empty_field_selector():
+    field_or_tagged_dim('')
