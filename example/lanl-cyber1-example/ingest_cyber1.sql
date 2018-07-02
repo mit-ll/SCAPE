@@ -46,7 +46,7 @@ CREATE TABLE redteam (
   dhost      VARCHAR(50)
 );
 
-# Modify the path to the data files
+-- # Modify the path to the data files
 
 COPY auth    FROM PROGRAM 'gzip -dc auth.txt.gz | head -100000000' DELIMITERS ',' CSV;
 COPY proc    FROM PROGRAM 'gzip -dc proc.txt.gz | head -100000000' DELIMITERS ',' CSV;
